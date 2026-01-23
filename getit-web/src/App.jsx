@@ -7,6 +7,7 @@ import Home from './pages/Open/Home';
 import About from './pages/Open/About';
 import Project from './pages/Open/Project';
 import Recruit from './pages/Open/Recruit';
+import Signup from './pages/Auth/Signup';
 import Login from './pages/Auth/Login';
 import Lecture from './pages/Member/Lecture';
 import LectureDetail from './pages/Member/LectureDetail';
@@ -38,7 +39,8 @@ function App() {
         
         {/* Login에 역할 설정 함수 전달 */}
         <Route path="/login" element={<Login setUserRole={setUserRole} />} />
-        
+        <Route path="/signup" element={<Signup />} />
+
         {/* 🔐 멤버 & 관리자 공통 접근 */}
         {isLoggedIn && (
           <>

@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { User, Lock, ArrowRight } from 'lucide-react';
+import { User, Lock, ArrowRight, UserPlus } from 'lucide-react';
 import axios from 'axios'; // 1. Axios 임포트
 
 const Login = ({ setUserRole }) => {
@@ -90,14 +90,26 @@ const Login = ({ setUserRole }) => {
             </div>
           </div>
 
-          {/* 로그인 버튼 */}
-          <button 
-            type="submit" 
-            className="w-full bg-gradient-to-r from-cyan-600 to-blue-600 hover:from-cyan-500 hover:to-blue-500 text-white font-bold py-4 rounded-xl transition-all transform hover:scale-[1.02] flex items-center justify-center gap-2 shadow-lg mt-4"
-          >
-            로그인 하기 <ArrowRight size={20} />
-          </button>
+           {/* 버튼 영역 */}
+          <div className="pt-2 space-y-3">
+            {/* 1. 로그인 버튼 (메인) */}
+            <button 
+              type="submit" 
+              className="w-full bg-gradient-to-r from-cyan-600 to-blue-600 hover:from-cyan-500 hover:to-blue-500 text-white font-bold py-4 rounded-xl transition-all transform hover:scale-[1.02] flex items-center justify-center gap-2 shadow-lg"
+            >
+              로그인 하기 <ArrowRight size={20} />
+            </button>
 
+            {/* 2. 회원가입 버튼 (추가됨) */}
+            <button 
+              type="button" // form submit 방지
+              onClick={() => navigate('/signup')} // 회원가입 페이지로 이동
+              className="w-full bg-transparent border border-white/20 text-gray-300 hover:bg-white/5 hover:text-white font-bold py-4 rounded-xl transition-all flex items-center justify-center gap-2"
+            >
+              <UserPlus size={20} />
+              아직 계정이 없으신가요? 회원가입
+            </button>
+          </div>
         </form>
 
         <div className="mt-6 text-center text-sm text-gray-500">

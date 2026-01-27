@@ -1,8 +1,7 @@
 import React from 'react';
-import { PlayCircle, Send, LogIn } from 'lucide-react'; // 아이콘 import 확인
+import { PlayCircle, Send, LogIn } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 
-// 🔥 isLoggedIn을 props로 받습니다.
 const Home = ({ isLoggedIn }) => {
   const navigate = useNavigate();
 
@@ -35,11 +34,8 @@ const Home = ({ isLoggedIn }) => {
           <p className="text-gray-400 text-sm md:text-xl max-w-lg mt-4 font-light">
             상상을 현실로 만드는 IT 창업 동아리, <b>GET IT</b>입니다.
           </p>
-
-          {/* 버튼 로직 */}
           <div className="flex flex-col md:flex-row gap-4 mt-8">
             {isLoggedIn ? (
-              // 🔓 로그인 상태
               <button 
                 onClick={() => navigate('/lecture')}
                 className="bg-cyan-500 text-[#110b29] font-bold py-4 px-8 rounded-full hover:bg-cyan-400 transition-all transform hover:scale-105 flex items-center gap-2 shadow-[0_0_20px_rgba(34,211,238,0.4)]"
@@ -47,7 +43,6 @@ const Home = ({ isLoggedIn }) => {
                 <PlayCircle size={20} /> 강좌 보러가기
               </button>
             ) : (
-              // 👤 게스트 상태
               <button 
                 onClick={() => navigate('/recruit')}
                 className="bg-white text-[#110b29] font-bold py-4 px-8 rounded-full hover:bg-gray-100 transition-all transform hover:scale-105 flex items-center gap-2 shadow-lg"

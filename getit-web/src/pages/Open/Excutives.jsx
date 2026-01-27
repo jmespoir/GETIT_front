@@ -22,8 +22,8 @@ const Executives = () => {
       desc: "체계적인 커리큘럼과 즐거운 네트워킹을 담당합니다.",
       image: "/api/placeholder/150/150",
       links: {
-        github: "https://github.com",
-        email: "mailto:vp@example.com"
+        github: "https://github.com/ChanWooong",
+        email: "mailto:oco466kr@knu.ac.kr"
       }
     },
     {

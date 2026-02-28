@@ -1,4 +1,3 @@
-import React from 'react';
 import { BookOpen, Rocket, MonitorPlay, BrainCircuit, Calendar, CheckCircle } from 'lucide-react';
 
 const About = () => {

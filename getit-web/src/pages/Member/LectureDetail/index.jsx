@@ -63,7 +63,7 @@ const LectureDetailCombined = () => {
       stopMonitoring();
     }
   };
-
+  const warningTimerRef = useRef(null);
   // 스킵 감시 로직 (0.5초마다 체크)
   const startMonitoring = () => {
     if (timerRef.current) clearInterval(timerRef.current);
@@ -81,7 +81,8 @@ const LectureDetailCombined = () => {
       // 스킵 시도 감지 (1초 이상 건너뜀)
       else if (currentTime > maxTime + 1.0) {
         setShowWarning(true);
-        setTimeout(() => setShowWarning(false), 3000);
+        if (warningTimerRef.current) clearTimeout(warningTimerRef.current);
+        warningTimerRef.current = setTimeout(() => setShowWarning(false), 3000);
         playerRef.current.seekTo(maxTime); // 강제 복귀
       }
     }, 500);

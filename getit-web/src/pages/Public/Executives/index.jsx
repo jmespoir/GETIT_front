@@ -1,8 +1,10 @@
 import { Sparkles ,Instagram} from "lucide-react";
+import { useAppStore } from '../../../store/appStore';
 import memberList from "../../../resources/Executive/executive.json";
 import MemberCard from "../../../components/MemberCard";
 import Footer from "../../../components/ContactFooter";
 const Executives = () => {
+  const { generationText } = useAppStore();
   // 👥 운영진 데이터 (여기에 실제 정보를 입력하세요)
   const members = memberList?.list || [];
   return (
@@ -25,7 +27,7 @@ const Executives = () => {
           </h2>
 
           <p className="text-gray-400 text-lg max-w-xl mx-auto">
-            GET IT 9기를 이끌어갈 운영진을 소개합니다.
+            GET IT {generationText}을 이끌어갈 운영진을 소개합니다.
             <br />
             열정 가득한 여러분을 기다리고 있습니다.
           </p>

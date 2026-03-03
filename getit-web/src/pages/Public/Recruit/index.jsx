@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { useAppStore } from '../../../store/appStore';
 import { 
   Calendar, 
   ChevronDown, 
@@ -15,6 +16,7 @@ import scheduleData from "../../../resources/Recruit/Schedule.json";
 import faqData from "../../../resources/Recruit/FAQ.json";
 const Recruit = () => {
   const navigate = useNavigate();
+  const { generation, generationText } = useAppStore();
   
   // 🔥 모집 상태 및 로그인 상태 체크
   const isRecruiting = true; 
@@ -70,7 +72,7 @@ const Recruit = () => {
           <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-white/5 border border-white/10 mb-6">
             <Sparkles size={16} className="text-cyan-400" />
             <span className="text-sm font-bold tracking-wider text-cyan-400 uppercase">
-              Recruiting 9th Members
+              Recruiting {generation}th Members
             </span>
           </div>
           
@@ -83,7 +85,7 @@ const Recruit = () => {
           
           <p className="text-gray-400 text-lg max-w-xl mx-auto mb-10 leading-relaxed">
             당신의 아이디어가 세상에 닿을 때까지.<br />
-            GET IT과 함께 성장할 9기 멤버를 찾습니다.
+            GET IT과 함께 성장할 {generationText} 멤버를 찾습니다.
           </p>
 
           {/* 지원하기 버튼 (로그인 체크 로직 적용) */}
@@ -92,7 +94,7 @@ const Recruit = () => {
               onClick={handleApplyClick}
               className="inline-flex items-center gap-3 bg-cyan-500 text-[#110b29] px-10 py-5 rounded-full font-black text-xl hover:bg-cyan-400 hover:scale-105 transition-all shadow-[0_0_30px_rgba(34,211,238,0.4)] active:scale-95"
             >
-              9기 지원하러 가기 <Send size={22} />
+              {generationText} 지원하러 가기 <Send size={22} />
             </button>
           ) : (
             <button disabled className="bg-gray-800 text-gray-500 px-10 py-5 rounded-full font-bold text-xl cursor-not-allowed border border-white/5">

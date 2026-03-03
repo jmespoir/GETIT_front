@@ -1,7 +1,7 @@
 import { Sparkles ,Instagram} from "lucide-react";
 import memberList from "../../../resources/Executive/executive.json";
 import MemberCard from "../../../components/MemberCard";
-import Footer from "../../../components/Footer";
+import Footer from "../../../components/ContactFooter";
 const Executives = () => {
   // 👥 운영진 데이터 (여기에 실제 정보를 입력하세요)
   const members = memberList?.list || [];
@@ -37,7 +37,7 @@ const Executives = () => {
             <MemberCard member={member} idx={idx} key={idx} />
           ))}
         </div>
-        
+
         {/* 3. 푸터 섹션 */}
         <Footer />
       </div>

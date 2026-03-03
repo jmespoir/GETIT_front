@@ -9,7 +9,7 @@ import {
 import springSchedule from "../../../resources/Schedule/springSchedule.json";
 import fallSchedule from "../../../resources//Schedule/fallSchedule.json";
 import Schedule from "../../../components/Schedule";
-import Footer from "../../../components/Footer";
+import Footer from "../../../components/ContactFooter";
 
 function About() {
   const springScheduleList = springSchedule.Schedule; // 1학기 일정

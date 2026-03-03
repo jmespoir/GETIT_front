@@ -10,7 +10,9 @@ import {
   Rocket,    
   Flag       
 } from 'lucide-react';
-import Footer from "../../../components/Footer";
+import Footer from "../../../components/ContactFooter";
+import scheduleData from "../../../resources/Recruit/Schedule.json";
+import faqData from "../../../resources/Recruit/FAQ.json";
 const Recruit = () => {
   const navigate = useNavigate();
   
@@ -50,20 +52,10 @@ const Recruit = () => {
   ];
 
   // 모집 일정 데이터
-  const schedule = [
-    { step: "01", title: "서류 접수", date: "3.12 ~ 3.14" },
-    { step: "02", title: "서류 발표", date: "3.15" },
-    { step: "03", title: "면접 심사", date: "3.16 ~ 3.18" },
-    { step: "04", title: "최종 합격", date: "3.19" }
-  ];
+  const schedule = scheduleData.data || [];
 
   // FAQ 데이터
-  const faqs = [
-    { q: "코딩을 한 번도 안 해본 비전공자도 지원 가능한가요?", a: "네, 가능합니다! GET IT은 실력보다 열정을 중요하게 생각합니다. 신입 기수 교육 커리큘럼이 준비되어 있으니 걱정 마세요." },
-    { q: "정기 모임은 언제인가요?", a: "2주에 한번 목요일 저녁 7시에 정기 세미나가 있으며, 시험 기간 2주는 휴식기를 갖습니다." },
-    { q: "회비가 있나요?", a: "네, 동아리 운영 및 서버 비용 등을 위해 학기당 2만원의 회비가 있습니다." },
-    { q: "재학생만 지원 가능한가요?", a: "기본적으로 재학생 및 휴학생을 대상으로 하지만, 졸업 유예생의 경우 면접 시 논의 가능합니다." }
-  ];
+  const faqs = faqData.data || [];
 
   const [openFaqIndex, setOpenFaqIndex] = useState(null);
   const toggleFaq = (index) => setOpenFaqIndex(openFaqIndex === index ? null : index);
@@ -180,8 +172,12 @@ const Recruit = () => {
               </div>
             ))}
           </div>
+
+
           {/* 5. 푸터 섹션 */}
           <Footer />
+
+          
         </div>
       </div>
     </div>

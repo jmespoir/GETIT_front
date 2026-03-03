@@ -99,11 +99,6 @@ const Navbar = ({ userRole, setUserRole }) => {
                 </Link>
               )}
 
-              {userRole === 'ROLE_GUEST' && (
-                <span className="text-yellow-500 text-sm border border-yellow-500/30 px-4 py-1 rounded-full">
-                  운영진 승인 대기 중
-                </span>
-              )}
 
               <button onClick={handleLogout} className="text-gray-400 mt-4 flex items-center gap-2">
                 <LogOut size={20} /> Logout

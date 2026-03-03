@@ -7,9 +7,14 @@ export const useAppStore = create((set) => ({
   generationText: '9기',
 
   // 기수를 업데이트하는 함수
-  setGeneration: (generation) =>
+  setGeneration: (generation) =>{
+    const normalized = Number(generation);
+    if (isNaN(normalized) || normalized <= 0) {
+      console.warn("Invalid generation number:", generation);
+      return;
+    }
     set({
-      generation,
-      generationText: `${generation}기`,
-    }),
-}));
+      generation: normalized,
+      generationText: `${normalized}기`,
+    })}
+  }));

@@ -8,15 +8,18 @@ function MemberCard({ member }) {
   let borderColor = "border-cyan-400";
   let badgeBg = "bg-cyan-400";
   let badgeText = "GENERAL";
+  let groundHoverBorderColor = "group-hover:border-cyan-400";
 
   if (member.role.includes("SW")) {
     borderColor = "border-green-400";
     badgeBg = "bg-green-400";
     badgeText = "SOFTWARE";
+    groundHoverBorderColor = "group-hover:border-green-400";
   } else if (member.role.includes("창업")) {
     borderColor = "border-pink-400";
     badgeBg = "bg-pink-400";
     badgeText = "STARTUP";
+    groundHoverBorderColor = "group-hover:border-pink-400";
   }
 
   return (
@@ -28,7 +31,7 @@ function MemberCard({ member }) {
       <div className="flex flex-col sm:flex-row items-center sm:items-start gap-6">
         {/* 프로필 이미지 영역 */}
         <div className="relative shrink-0">
-          <div className={`w-24 h-24 rounded-full overflow-hidden border-2 border-white/10 group-hover:${borderColor} transition-colors`}>
+          <div className={`w-24 h-24 rounded-full overflow-hidden border-2 border-white/10 ${groundHoverBorderColor} transition-colors`}>
             <img
               src={`/${member.image}`} // 이미지 경로 수정
               alt={member.name}
@@ -71,9 +74,6 @@ function MemberCard({ member }) {
               >
                 <Instagram size={18} />
               </a>
-            )}
-            {member.links.email && (
-              <CopyEmail email={member.links.email} />
             )}
             {member.links.blog && (
               <a

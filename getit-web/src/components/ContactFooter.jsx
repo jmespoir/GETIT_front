@@ -13,7 +13,8 @@ const Footer = () => {
             <a
               href="https://www.instagram.com/knu_get_it/"
               target="_blank"
-              rel="noreferrer"
+              rel="noopener noreferrer"
+              aria-label="GET IT 인스타그램 방문"
               className="p-2 rounded-full bg-white/5 hover:bg-white/20 hover:text-cyan-400 text-gray-400 transition-all relative"
             >
               <Instagram size={18} />

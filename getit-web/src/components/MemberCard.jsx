@@ -1,6 +1,9 @@
 import React from 'react';
-import { Github, Instagram, Mail, ExternalLink } from 'lucide-react';
+import { Github, Instagram, Mail, ExternalLink, Copy } from 'lucide-react';
+import CopyEmail from './EmailButton';
 function MemberCard({ member }) {
+
+
   // 역할에 따라 카드 색상을 구분
   let borderColor = "border-cyan-400";
   let badgeBg = "bg-cyan-400";
@@ -70,12 +73,7 @@ function MemberCard({ member }) {
               </a>
             )}
             {member.links.email && (
-              <a
-                href={member.links.email}
-                className="p-2 rounded-full bg-white/5 hover:bg-white/20 hover:text-cyan-400 text-gray-400 transition-all"
-              >
-                <Mail size={18} />
-              </a>
+              <CopyEmail email={member.links.email} />
             )}
             {member.links.blog && (
               <a

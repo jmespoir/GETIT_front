@@ -47,7 +47,8 @@ const ProfileSetup = () => {
           'Authorization': `Bearer ${token}` 
         }
       });
-      alert(response.data || MESSAGES.PROFILE_SUCCESS);
+      const successMsg = response.data || MESSAGES.PROFILE_SUCCESS;
+      alert(successMsg);
       navigate('/'); 
     } catch (error) {
       console.error("등록 에러:", error.response?.data);

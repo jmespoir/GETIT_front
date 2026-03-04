@@ -5,11 +5,11 @@ import { ROLES } from '../constants';
 function resolveInitialRole() {
   try {
     const token = typeof window !== 'undefined' ? localStorage.getItem('accessToken') : null;
-    if (!token) return ROLES.MEMBER;
+    if (!token) return ROLES.GUEST;
     const decoded = jwtDecode(token);
-    return decoded.role || ROLES.MEMBER;
+    return decoded.role || ROLES.GUEST;
   } catch {
-    return ROLES.MEMBER;
+    return ROLES.GUEST;
   }
 }
 

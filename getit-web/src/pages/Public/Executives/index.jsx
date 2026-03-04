@@ -1,4 +1,4 @@
-import { Sparkles ,Instagram} from "lucide-react";
+import { Sparkles ,Instagram, Mail} from "lucide-react";
 import { useAppStore } from '../../../store/appStore';
 import memberList from "../../../resources/Executive/executive.json";
 import MemberCard from "../../../components/MemberCard";

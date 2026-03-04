@@ -1,53 +1,14 @@
 import React, { useState } from 'react';
 import { Github, ExternalLink, Folder, Code, Smartphone, Cpu } from 'lucide-react';
+import projectsData from '../../../resources/Project/projects.json';
+
+const projects = projectsData;
 
 const Project = () => {
-  const [filter, setFilter] = useState("All");
+  const [filter, setFilter] = useState('All');
 
-  // 📂 프로젝트 더미 데이터 (나중에 이 내용을 수정하세요)
-  const projects = [
-    {
-      id: 1,
-      title: "Campus Mate",
-      category: "App",
-      desc: "공강 시간표 자동 생성 및 학식 정보 제공 앱. 출시 3개월 만에 다운로드 1,000회 돌파.",
-      tech: ["Flutter", "Firebase", "Node.js"],
-      links: { github: "#", demo: "#" },
-      color: "from-purple-500 to-indigo-500" // 썸네일 대신 배경색
-    },
-    {
-      id: 2,
-      title: "Stock AI Predictor",
-      category: "AI",
-      desc: "과거 10년치 주가 데이터를 학습하여 내일의 등락을 예측하는 딥러닝 모델 서비스.",
-      tech: ["Python", "TensorFlow", "FastAPI"],
-      links: { github: "#", demo: "#" },
-      color: "from-emerald-500 to-teal-500"
-    },
-    {
-      id: 3,
-      title: "GET IT Official Web",
-      category: "Web",
-      desc: "동아리 소개 및 부원 관리, 리크루팅을 위한 공식 반응형 웹사이트.",
-      tech: ["React", "Tailwind", "Spring Boot"],
-      links: { github: "#", demo: "#" },
-      color: "from-blue-500 to-cyan-500"
-    },
-    {
-      id: 4,
-      title: "Safe Return",
-      category: "App",
-      desc: "GPS 기반 안심 귀가 서비스. 경로 이탈 시 보호자에게 자동 알림 전송.",
-      tech: ["Kotlin", "Spring Boot", "MySQL"],
-      links: { github: "#", demo: "#" },
-      color: "from-orange-500 to-red-500"
-    }
-  ];
-
-  // 필터링 로직
-  const filteredProjects = filter === "All" 
-    ? projects 
-    : projects.filter(p => p.category === filter);
+  const filteredProjects =
+    filter === 'All' ? projects : projects.filter((p) => p.category === filter);
 
   return (
     <div className="min-h-screen bg-[#110b29] text-white pt-24 pb-20 px-6 font-sans">

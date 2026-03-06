@@ -18,7 +18,7 @@ const Navbar = ({ auth }) => {
   const closeMenu = () => setIsMenuOpen(false);
 
   return (
-    <nav className="fixed top-0 left-0 w-full z-50 bg-[#110b29]/80 backdrop-blur-md border-b border-white/5 px-6 py-4 transition-all">
+    <nav className="fixed top-0 left-0 right-0 w-full z-50 bg-[#110b29]/80 backdrop-blur-md border-b border-white/5 px-4 sm:px-6 py-3 sm:py-4 transition-all pt-[env(safe-area-inset-top)]">
       <div className="max-w-7xl mx-auto flex justify-between items-center">
         
         <Link to="/" onClick={closeMenu} className="text-2xl md:text-3xl font-black italic text-white z-50 hover:opacity-80">
@@ -70,24 +70,24 @@ const Navbar = ({ auth }) => {
           )}
         </div>
 
-        <button className="md:hidden text-white z-50" onClick={() => setIsMenuOpen(!isMenuOpen)}>
+        <button type="button" aria-label={isMenuOpen ? '메뉴 닫기' : '메뉴 열기'} className="md:hidden text-white z-50 min-w-[44px] min-h-[44px] flex items-center justify-center -mr-2" onClick={() => setIsMenuOpen(!isMenuOpen)}>
           {isMenuOpen ? <X size={28} /> : <Menu size={28} />}
         </button>
       </div>
 
       {/* --- 모바일 메뉴 --- */}
       {isMenuOpen && (
-        <div className="fixed inset-0 bg-[#110b29] z-40 flex flex-col justify-center items-center space-y-8 text-xl font-bold md:hidden text-white animate-fade-in">
-          <Link to="/about" onClick={closeMenu}>About</Link>
-          <Link to="/executives" onClick={closeMenu}>Executives</Link>
-          <Link to="/recruit" onClick={closeMenu}>Recruit</Link>
+        <div className="fixed inset-0 bg-[#110b29] z-40 flex flex-col justify-center items-center gap-6 text-xl font-bold md:hidden text-white animate-fade-in overflow-y-auto pt-24 pb-12 px-4">
+          <Link to="/about" onClick={closeMenu} className="py-2">About</Link>
+          <Link to="/executives" onClick={closeMenu} className="py-2">Executives</Link>
+          <Link to="/recruit" onClick={closeMenu} className="py-2">Recruit</Link>
           
           {isLoggedIn ? (
             <>
-              {isApproved && (
+              {isMember && (
                 <>
-                  <Link to="/lecture" onClick={closeMenu} className="text-cyan-400">Lecture</Link>
-                  <Link to="/invest" onClick={closeMenu} className="text-cyan-400">Invest</Link>
+                  <Link to="/lecture" onClick={closeMenu} className="text-cyan-400 py-2">Lecture</Link>
+                  <Link to="/invest" onClick={closeMenu} className="text-cyan-400 py-2">Invest</Link>
                 </>
               )}
               
@@ -98,12 +98,12 @@ const Navbar = ({ auth }) => {
               )}
 
 
-              <button onClick={handleLogout} className="text-gray-400 mt-4 flex items-center gap-2">
+              <button type="button" onClick={handleLogout} className="text-gray-400 mt-4 flex items-center gap-2 py-2">
                 <LogOut size={20} /> Logout
               </button>
             </>
           ) : (
-            <Link to="/login" onClick={closeMenu} className="text-cyan-400 text-2xl mt-4">Login</Link>
+            <Link to="/login" onClick={closeMenu} className="text-cyan-400 text-2xl mt-4 py-2">Login</Link>
           )}
         </div>
       )}

@@ -29,15 +29,17 @@ const token = params.get('token');
 const isNew = params.get('isNewMember') === 'true';
 const hasInfo = params.get('hasInfo') === 'true';
 
-if(token) { 
-  localStorage.setItem('accessToken', token); 
+if(token) {
+  localStorage.setItem('accessToken', token);
   localStorage.setItem('isNewMember', params.get('isNewMember'));
   localStorage.setItem('hasInfo', params.get('hasInfo'));
-  window.history.replaceState({}, document.title, window.location.pathname); // 토큰 저장 후 URL 정리
 
   if(isNew && !hasInfo) {
     alert(MESSAGES.PROFILE_SETUP_REQUIRED);
     window.location.replace('/profileSetup');
+  } else {
+    // replaceState만으로는 React Router가 갱신되지 않으므로, 홈으로 완전 이동(한 번 새로고침됨)
+    window.location.replace('/');
   }
 }
 
@@ -60,6 +62,8 @@ function App() {
         />
         <Route path="/login" element={<Login setUserRole={setUserRole} />} />
         <Route path="/profileSetup" element={<ProfileSetup />} />
+        {/* OAuth 콜백으로 /token 도착 시 홈으로 (토큰 처리 후 replace가 안 된 경우 대비) */}
+        <Route path="/token" element={<Navigate to="/" replace />} />
 
         {isApproved && (
           <>

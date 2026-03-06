@@ -91,7 +91,7 @@ const SettingsManagement = ({ onBack }) => {
           </div>
 
           <p className="text-gray-500 text-sm mb-4">
-            모집 기간은 <strong className="text-gray-400">한국 시간(KST)</strong> 기준입니다. 서버에서 KST에서 10시간을 뺀 값으로 저장합니다.
+            모집 기간은 <strong className="text-gray-400">한국 시간(KST)</strong> 기준으로 입력하세요. 서버에는 UTC로 저장·비교되어, 설정한 한국 시간에 맞게 동작합니다.
           </p>
           <div className="space-y-4">
             <div>

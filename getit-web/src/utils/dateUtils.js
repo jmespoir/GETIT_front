@@ -5,9 +5,10 @@
  */
 
 /**
- * datetime-local 값(한국 시간)을 UTC ISO 8601로 변환해 서버로 전송
+ * datetime-local 값(한국 시간)을 서버 전송 형식(UTC)으로 변환
+ * 서버 형식: "YYYY-MM-DDTHH:mm:ss" (UTC, Z 없음)
  * @param {string} dateTimeLocal - "YYYY-MM-DDTHH:mm" (KST)
- * @returns {string} "YYYY-MM-DDTHH:mm:ss.sssZ"
+ * @returns {string} "YYYY-MM-DDTHH:mm:ss"
  */
 export function kstToServerFormat(dateTimeLocal) {
   if (!dateTimeLocal || !dateTimeLocal.trim()) return '';
@@ -15,17 +16,25 @@ export function kstToServerFormat(dateTimeLocal) {
   const withSec = /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}/.test(s) ? s : s.replace(/T(\d{2}:\d{2})$/, 'T$1:00');
   const date = new Date(withSec + '+09:00');
   if (Number.isNaN(date.getTime())) return '';
-  return date.toISOString();
+  const y = date.getUTCFullYear();
+  const m = String(date.getUTCMonth() + 1).padStart(2, '0');
+  const d = String(date.getUTCDate()).padStart(2, '0');
+  const h = String(date.getUTCHours()).padStart(2, '0');
+  const min = String(date.getUTCMinutes()).padStart(2, '0');
+  const sec = String(date.getUTCSeconds()).padStart(2, '0');
+  return `${y}-${m}-${d}T${h}:${min}:${sec}`;
 }
 
 /**
- * 서버에서 받은 UTC ISO 문자열을 datetime-local(한국 시간)으로 변환
- * @param {string} serverStored - "YYYY-MM-DDTHH:mm:ss.sssZ" 등 UTC
+ * 서버에서 받은 UTC 문자열을 datetime-local(한국 시간)으로 변환
+ * 서버 형식: "YYYY-MM-DDTHH:mm:ss" (UTC, Z 없을 수 있음)
+ * @param {string} serverStored - "YYYY-MM-DDTHH:mm:ss" 또는 "YYYY-MM-DDTHH:mm:ss.sssZ"
  * @returns {string} "YYYY-MM-DDTHH:mm" (KST, input value용)
  */
 export function serverStoredToKstDateTimeLocal(serverStored) {
   if (!serverStored || !serverStored.trim()) return '';
-  const date = new Date(serverStored.trim());
+  const s = serverStored.trim();
+  const date = new Date(s.endsWith('Z') || s.includes('+') ? s : s + 'Z');
   if (Number.isNaN(date.getTime())) return '';
   const parts = new Intl.DateTimeFormat('en-CA', {
     timeZone: 'Asia/Seoul',

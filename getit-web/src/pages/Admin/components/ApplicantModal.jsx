@@ -1,16 +1,15 @@
 import React from 'react';
 import { X } from 'lucide-react';
+import questions from '../../../resources/Apply/question.json';
 
 const ApplicantModal = ({ applicant, onClose }) => {
   if (!applicant) return null;
 
-  const questions = [
-    { q: "1. 지원 동기", a: applicant.answers?.q1 },
-    { q: "2. 기술적 도전", a: applicant.answers?.q2 },
-    { q: "3. 협업 및 갈등 해결", a: applicant.answers?.q3 },
-    { q: "4. 이루고 싶은 목표", a: applicant.answers?.q4 },
-    { q: "5. 운영진에게 하고 싶은 말", a: applicant.answers?.q5 },
-  ];
+
+  const questionItems = questions.map((q) => ({
+      q: q.label,
+      a: applicant.answers?.[q.index]
+  }));
 
   return (
     <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/80 backdrop-blur-md">
@@ -20,8 +19,10 @@ const ApplicantModal = ({ applicant, onClose }) => {
         </button>
         <div className="mb-10">
           <span className="text-cyan-400 font-bold text-xs uppercase tracking-widest">Application Review</span>
-          <h3 className="text-4xl font-black mt-2 italic">{applicant.name}<span className="text-cyan-400">.</span></h3>
-          <p className="text-gray-500 mt-2">{applicant.department} | {applicant.submittedAt.replace('T', ' ')}</p>
+          <h3 className="text-4xl font-black mt-2 italic">
+            {applicant.name || '이름 없음'}<span className="text-cyan-400">.</span>
+          </h3>
+          <p className="text-gray-400 text-sm mt-1">{applicant.department || '학과 없음'}</p>
         </div>
         <div className="space-y-6 overflow-y-auto pr-2 custom-scrollbar flex-1">
           {questions.map((item, idx) => (

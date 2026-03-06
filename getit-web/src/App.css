@@ -1,8 +1,8 @@
+/* 모바일: 루트를 전체 너비로 두어 fixed 네비가 깨지지 않도록 함. 각 페이지가 자체 max-w·padding 관리 */
 #root {
-  max-width: 1280px;
-  margin: 0 auto;
-  padding: 2rem;
-  text-align: center;
+  width: 100%;
+  min-height: 100vh;
+  overflow-x: hidden;
 }
 
 .logo {

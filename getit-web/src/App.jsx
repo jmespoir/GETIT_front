@@ -12,7 +12,7 @@ import Login from './pages/Auth/Login/index.jsx';
 import Lecture from './pages/Member/LectureList/index.jsx';
 import LectureDetail from './pages/Member/LectureDetail/index.jsx';
 import Invest from './pages/Member/Invest';
-import Executives from './pages/Public/Excutives.jsx';
+import Executives from './pages/Public/Executives.jsx';
 import Dashboard from './pages/Member/Dashboard';
 import AdminPage from './pages/Admin/index.jsx';
 import Apply from './pages/Public/Apply.jsx';
@@ -44,7 +44,7 @@ function RedirectHandler() {
 
 function App() {
   const auth = useAuth();
-  const { userRole, setUserRole, isLoggedIn, isApproved, isAdmin,isMember } = auth;
+  const { userRole, isLoggedIn, isApproved, isAdmin, isMember } = auth;
 
   return (
     <BrowserRouter>
@@ -61,7 +61,7 @@ function App() {
           path="/apply"
           element={isLoggedIn ? <Apply /> : <Navigate to="/login" replace />}
         />
-        <Route path="/login" element={<Login setUserRole={setUserRole} />} />
+        <Route path="/login" element={<Login />} />
         <Route
           path="/profileSetup"
           element={isLoggedIn ? <ProfileSetup /> : <Navigate to="/login" replace />}

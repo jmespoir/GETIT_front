@@ -1,3 +1,12 @@
+/**
+ * 공통 이미지 경로 (public/images/ 에 넣은 파일).
+ * 사용: <img src={IMAGES.LOGO} alt="..." /> 또는 <img src={IMAGES.경로} />
+ * 새 이미지 추가 시 여기에 키와 경로를 추가하면 됨.
+ */
+export const IMAGES = {
+  // 예: LOGO: '/images/logo.png',
+};
+
 /** 역할 (JWT role 값과 동일) */
 export const ROLES = {
   GUEST: 'GUEST',

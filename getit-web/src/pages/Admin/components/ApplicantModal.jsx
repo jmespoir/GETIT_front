@@ -6,10 +6,11 @@ import { ADMIN_APPLY_MESSAGES } from '../../../constants';
 const ApplicantModal = ({ applicant, onClose }) => {
   if (!applicant) return null;
 
-  const questionItems = questions.map((q) => ({
-    label: q.label,
-    answer: applicant[`answer${q.index + 1}`] ?? applicant.answers?.[q.index] ?? ''
-  }));
+  const questionItems = questions.map((q) => {
+    const raw = applicant[`answer${q.index + 1}`] ?? applicant.answers?.[q.index] ?? '';
+    const answer = q.type === 'agreement' ? (raw === 'agreed' ? '동의함' : raw || '미동의') : raw;
+    return { label: q.label, answer };
+  });
 
   const handleBackdropClick = (e) => {
     if (e.target === e.currentTarget) onClose();

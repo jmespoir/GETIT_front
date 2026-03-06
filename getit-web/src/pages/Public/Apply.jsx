@@ -60,7 +60,11 @@ const Apply = () => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    if (Object.values(answers).some((val) => val.trim() === '')) {
+    const isIncomplete = Object.entries(answers).some(([id, val]) => {
+      const s = (val ?? '').toString().trim();
+      return id === 'q8' ? s !== 'agreed' : s === '';
+    });
+    if (isIncomplete) {
       return alert(MESSAGES.APPLY_ALL_REQUIRED);
     }
     if (!window.confirm(MESSAGES.APPLY_SUBMIT_CONFIRM)) return;

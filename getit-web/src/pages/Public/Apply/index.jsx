@@ -1,34 +1,83 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
+import axios from 'axios';
 import { useAppStore } from '../../../store/appStore';
 import ApplyHeader from './components/ApplyHeader';
 import QuestionField from './components/QuestionField';
 import SubmitButton from './components/SubmitButton';
+import questionData from '../../../resources/Apply/question.json';
 
 const Apply = () => {
   const { generationText } = useAppStore();
   const [isLoading, setIsLoading] = useState(false);
   const [answers, setAnswers] = useState({ q1: '', q2: '', q3: '', q4: '', q5: '' });
 
-  const questions = [
-    { id: 'q1', label: `1. GET IT ${generationText}에 지원하게 된 동기는 무엇인가요?` },
-    { id: 'q2', label: '2. 본인이 경험한 프로젝트 중 가장 기억에 남는 기술적 도전은?' },
-    { id: 'q3', label: '3. 협업 과정에서 갈등이 생겼을 때 본인만의 해결 방법이 있나요?' },
-    { id: 'q4', label: '4. 이번 기수 동안 본인이 반드시 이루고 싶은 목표가 있다면?' },
-    { id: 'q5', label: '5. 마지막으로 운영진에게 하고 싶은 말이 있다면 자유롭게 적어주세요.' }
-  ];
+  const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
 
-  const handleValueChange = (id, value) => setAnswers(prev => ({ ...prev, [id]: value }));
+  // ✅ JSON에서 가져오되 q1은 generationText 동적 적용
+  const questions = questionData.map((q) =>
+    q.id === 'q1'
+      ? { ...q, label: `1. GET IT ${generationText}${q.label}` }
+      : q
+  );
+
+  useEffect(() => {
+    const loadDraft = async () => {
+      const token = localStorage.getItem('accessToken');
+      try {
+        const response = await axios.get(`${API_BASE_URL}/api/applies/draft`, {
+          headers: { Authorization: `Bearer ${token}` }
+        });
+        if (response.data.success && response.data.data) {
+          const d = response.data.data;
+          setAnswers({ q1: d.answer1, q2: d.answer2, q3: d.answer3, q4: d.answer4, q5: d.answer5 });
+          alert("작성 중이던 임시 저장 데이터를 불러왔습니다.");
+        }
+      } catch (err) {
+        console.log("임시 저장 데이터가 없거나 불러오기 실패", err);
+      }
+    };
+    loadDraft();
+  }, []);
+
+  const handleSaveDraft = async () => {
+    const token = localStorage.getItem('accessToken');
+    try {
+      setIsLoading(true);
+      await axios.put(`${API_BASE_URL}/api/applies/draft`, {
+        answer1: answers.q1, answer2: answers.q2, answer3: answers.q3,
+        answer4: answers.q4, answer5: answers.q5, agree: true
+      }, { headers: { Authorization: `Bearer ${token}` } });
+      alert("임시 저장이 완료되었습니다.");
+    } catch (err) {
+      alert("임시 저장 중 오류가 발생했습니다.");
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    const token = localStorage.getItem('accessToken');
     if (Object.values(answers).some(val => val.trim() === "")) return alert("모든 문항을 작성해주세요!");
-    
-    setIsLoading(true);
-    setTimeout(() => { setIsLoading(false); alert("제출이 완료되었습니다.\n저희 GETIT에 지원해주셔서 진심으로 감사드리며,\n3월 15일에 있을 서류 발표를 기다려주세요!"); 
-          window.location.href = '/';
-    }, 1000);
+    if (!window.confirm("제출 후에는 수정이 불가능합니다. 제출하시겠습니까?")) return;
 
-  }
+    setIsLoading(true);
+    try {
+      await axios.post(`${API_BASE_URL}/api/applies`, {
+        answer1: answers.q1, answer2: answers.q2, answer3: answers.q3,
+        answer4: answers.q4, answer5: answers.q5, agree: true
+      }, { headers: { Authorization: `Bearer ${token}` } });
+      alert("제출이 완료되었습니다! 3월 15일 발표를 기다려주세요.");
+      window.location.href = '/';
+    } catch (err) {
+      alert(err.response?.data?.message || "제출 중 오류가 발생했습니다.");
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleValueChange = (id, value) => setAnswers(prev => ({ ...prev, [id]: value }));
+
   return (
     <div className="min-h-screen w-full bg-[#110b29] py-20 px-6 text-white">
       <div className="max-w-3xl mx-auto bg-white/5 border border-white/10 p-8 md:p-12 rounded-[2.5rem] backdrop-blur-md shadow-2xl">
@@ -37,7 +86,7 @@ const Apply = () => {
           {questions.map((q) => (
             <QuestionField key={q.id} question={q} value={answers[q.id]} onChange={handleValueChange} />
           ))}
-          <SubmitButton isLoading={isLoading} />
+          <SubmitButton isLoading={isLoading} onSaveDraft={handleSaveDraft} />
         </form>
       </div>
     </div>

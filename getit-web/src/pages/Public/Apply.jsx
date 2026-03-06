@@ -2,8 +2,9 @@ import React, { useState, useEffect, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import api from '../../api/axios';
 import { useAppStore } from '../../hooks/appStore';
+import { useAuth } from '../../hooks/useAuth';
 import { MESSAGES, APPLY_ANNOUNCE_DATE } from '../../constants';
-import { answersToPayload, payloadToAnswers } from '../../utils/applyForm';
+import { answersToPayload, payloadToAnswers, isApplicationComplete } from '../../utils/applyForm';
 import ApplyHeader from '../../components/apply/ApplyHeader';
 import QuestionField from '../../components/apply/QuestionField';
 import SubmitButton from '../../components/apply/SubmitButton';
@@ -12,6 +13,7 @@ import questionData from '../../resources/Apply/question.json';
 const Apply = () => {
   const navigate = useNavigate();
   const { generationText } = useAppStore();
+  const { isLoggedIn } = useAuth();
   const [isLoading, setIsLoading] = useState(false);
   const initialAnswers = useMemo(
     () => Object.fromEntries(questionData.map((q) => [q.id, ''])),
@@ -47,16 +49,24 @@ useEffect(() => {
       if (draftResponse.data.success && draftResponse.data.data) {
         setAnswers(payloadToAnswers(draftResponse.data.data));
         alert(MESSAGES.APPLY_DRAFT_LOADED);
+  useEffect(() => {
+    const loadDraft = async () => {
+      if (!isLoggedIn) return;
+      try {
+        const response = await api.get('/api/applies/draft');
+        if (response.data.success && response.data.data) {
+          setAnswers(payloadToAnswers(response.data.data));
+          alert(MESSAGES.APPLY_DRAFT_LOADED);
+        }
+      } catch (err) {
+        console.log('임시 저장 데이터가 없거나 불러오기 실패', err);
       }
-    } catch (err) {
-      console.log('임시저장 불러오기 실패', err);
-    }
-  };
-  checkAndLoad();
-}, []);
+    };
+    loadDraft();
+  }, [isLoggedIn]);
 
   const handleSaveDraft = async () => {
-    if (!localStorage.getItem('accessToken')) {
+    if (!isLoggedIn) {
       alert(MESSAGES.APPLY_LOGIN_REQUIRED);
       return;
     }
@@ -73,11 +83,7 @@ useEffect(() => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    const isIncomplete = Object.entries(answers).some(([id, val]) => {
-      const s = (val ?? '').toString().trim();
-      return id === 'q8' ? s !== 'agreed' : s === '';
-    });
-    if (isIncomplete) {
+    if (!isApplicationComplete(answers)) {
       return alert(MESSAGES.APPLY_ALL_REQUIRED);
     }
     if (!window.confirm(MESSAGES.APPLY_SUBMIT_CONFIRM)) return;

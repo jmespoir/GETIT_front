@@ -1,5 +1,12 @@
 # React + Vite
 
+## 모집 기간 / 타임존 (Recruitment period)
+
+- **프론트**: 관리자 설정에서는 **한국 시간(KST)** 만 입력·표시합니다. 저장 시 KST를 UTC ISO 8601(`...Z`)로 변환해 `PATCH /api/recruitment/status`로 전달합니다.
+- **백엔드**: 서버는 받은 값을 **그대로 저장**하고, 모집 여부(`isOpen`) 판단 시 **현재 시각을 UTC로** 비교하면 됩니다. GET 시 `startAt`/`endAt`을 UTC ISO 문자열로 내려주면 프론트에서 KST로 변환해 표시합니다.
+
+---
+
 This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
 
 Currently, two official plugins are available:

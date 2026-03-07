@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Settings, Calendar, ArrowLeft } from 'lucide-react';
 import api from '../../../api/axios';
+import { kstToServerFormat, serverStoredToKstDateTimeLocal } from '../../../utils/dateUtils';
 
 const SettingsManagement = ({ onBack }) => {
   const [filter, setFilter] = useState('RECRUIT');
@@ -13,7 +14,10 @@ const SettingsManagement = ({ onBack }) => {
     const fetchStatus = async () => {
       try {
         const response = await api.get('/api/recruitment/status');
-        setIsOpen(response.data.isOpen);
+        const data = response.data;
+        setIsOpen(data.isOpen ?? false);
+        if (data.startAt) setStartAt(serverStoredToKstDateTimeLocal(data.startAt));
+        if (data.endAt) setEndAt(serverStoredToKstDateTimeLocal(data.endAt));
       } catch (err) {
         console.error('모집 상태 조회 실패', err);
       }
@@ -23,13 +27,16 @@ const SettingsManagement = ({ onBack }) => {
 
   const handleSave = async () => {
     if (!startAt || !endAt) return alert('시작/종료 시간을 모두 입력해주세요.');
-    if (new Date(startAt) >= new Date(endAt)) return alert('종료 시간이 시작 시간보다 늦어야 합니다.');
+    const startKst = kstToServerFormat(startAt);
+    const endKst = kstToServerFormat(endAt);
+    if (!startKst || !endKst) return alert('시작/종료 시간 형식을 확인해주세요.');
+    if (startKst >= endKst) return alert('종료 시간이 시작 시간보다 늦어야 합니다.');
 
     try {
       setLoading(true);
       await api.patch('/api/recruitment/status', {
-        startAt: startAt + ':00',
-        endAt: endAt + ':00',
+        startAt: startKst,
+        endAt: endKst,
       });
       alert('모집 기간이 설정되었습니다.');
       const response = await api.get('/api/recruitment/status');
@@ -83,9 +90,12 @@ const SettingsManagement = ({ onBack }) => {
             </span>
           </div>
 
+          <p className="text-gray-500 text-sm mb-4">
+            모집 기간은 <strong className="text-gray-400">한국 시간(KST)</strong> 기준으로 입력하세요. 서버에는 UTC로 저장·비교되어, 설정한 한국 시간에 맞게 동작합니다.
+          </p>
           <div className="space-y-4">
             <div>
-              <label className="text-gray-400 text-sm mb-2 block">모집 시작</label>
+              <label className="text-gray-400 text-sm mb-2 block">모집 시작 (KST)</label>
               <input
                 type="datetime-local"
                 value={startAt}
@@ -94,7 +104,7 @@ const SettingsManagement = ({ onBack }) => {
               />
             </div>
             <div>
-              <label className="text-gray-400 text-sm mb-2 block">모집 종료</label>
+              <label className="text-gray-400 text-sm mb-2 block">모집 종료 (KST)</label>
               <input
                 type="datetime-local"
                 value={endAt}

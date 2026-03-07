@@ -5,12 +5,37 @@ import { MessageCircle } from 'lucide-react';
 const Login = () => {
   const { generationText } = useAppStore();
 
-  // 백엔드 OAuth2 엔드포인트 URL (환경 변수로 관리하는 것이 좋습니다)
-  const API_BASE_URL = import.meta.env.VITE_API_BASE_URL 
+  const API_BASE_URL = import.meta.env.VITE_API_BASE_URL; 
   const GOOGLE_AUTH_URL = `${API_BASE_URL}/oauth2/authorization/google`;
   const KAKAO_AUTH_URL = `${API_BASE_URL}/oauth2/authorization/kakao`;
-  const handleSocialLogin = (url) => {
-    // OAuth2 흐름은 보통 window.location.href를 통해 백엔드 인증 페이지로 이동합니다.
+
+  const handleSocialLogin = (url, provider) => {
+    const userAgent = navigator.userAgent.toLowerCase();
+    
+    if (provider === 'google') {
+      const isInAppBrowser = /kakaotalk|instagram|facebook|line|twitter|naver/i.test(userAgent);
+      
+      if (isInAppBrowser) {
+        if (userAgent.includes('android')) {
+          const currentUrl = window.location.href;
+
+          const urlWithoutScheme = currentUrl.replace(/^https?:\/\//i, '');
+          const scheme = currentUrl.startsWith('http://') ? 'http' : 'https';
+          
+          const intentUrl = `intent://${urlWithoutScheme}#Intent;scheme=${scheme};package=com.android.chrome;end;`;
+          
+          window.location.href = intentUrl;
+          return; 
+        } 
+        
+        else if (userAgent.includes('iphone') || userAgent.includes('ipad')) {
+          alert("구글 로그인은 보안상 카카오톡 브라우저에서 차단됩니다.\n\n화면 우측 하단(또는 상단)의 메뉴[⋮]를 눌러 [Safari로 열기] 또는 [다른 브라우저로 열기]를 선택해주세요.");
+          return; 
+        }
+      }
+    }
+
+    // 인앱 브라우저가 아니거나, 카카오 로그인인 경우 정상적으로 백엔드 로그인 URL로 이동합니다.
     window.location.href = url;
   };
 
@@ -24,9 +49,9 @@ const Login = () => {
         </div>
 
         <div className="space-y-4">
-          {/* 구글 로그인 버튼 */}
+          {/* 구글 버튼: 클릭 시 provider로 'google'을 넘김 */}
           <button 
-            onClick={() => handleSocialLogin(GOOGLE_AUTH_URL)}
+            onClick={() => handleSocialLogin(GOOGLE_AUTH_URL, 'google')}
             className="w-full flex items-center justify-center gap-3 bg-white text-gray-900 font-bold py-4 rounded-2xl transition-all transform hover:scale-[1.02] shadow-lg"
           >
             <img 
@@ -37,9 +62,9 @@ const Login = () => {
             Google로 시작하기
           </button>
 
-          {/* 카카오 로그인 버튼 */}
+          {/* 카카오 버튼: 클릭 시 provider로 'kakao'를 넘김 */}
           <button 
-            onClick={() => handleSocialLogin(KAKAO_AUTH_URL)}
+            onClick={() => handleSocialLogin(KAKAO_AUTH_URL, 'kakao')}
             className="w-full flex items-center justify-center gap-3 bg-[#FEE500] text-[#3c1e1e] font-bold py-4 rounded-2xl transition-all transform hover:scale-[1.02] shadow-lg"
           >
             <MessageCircle size={22} fill="#3c1e1e" stroke="none" />

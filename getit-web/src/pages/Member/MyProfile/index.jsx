@@ -20,6 +20,7 @@ const MyProfile = () => {
   const [saveLoading, setSaveLoading] = useState(false);
   const [confirmModalOpen, setConfirmModalOpen] = useState(false);
   const [successModalOpen, setSuccessModalOpen] = useState(false);
+  const [successMessage, setSuccessMessage] = useState('');
   const [isEditing, setIsEditing] = useState(false);
   const [formData, setFormData] = useState(initialFormState);
   const [initialFormData, setInitialFormData] = useState(initialFormState);
@@ -27,7 +28,7 @@ const MyProfile = () => {
   useEffect(() => {
     const fetchMyInfo = async () => {
       try {
-        const response = await api.get('/api/member/me');
+        const response = await api.get('/api/member/info');
         const data = response.data ?? {};
         const loaded = {
           name: data.name ?? '',
@@ -64,11 +65,12 @@ const MyProfile = () => {
   const handleConfirmOk = async () => {
     setSaveLoading(true);
     try {
-      await api.patch('/api/member/info', formData);
+      const response = await api.patch('/api/member/info', formData);
       setUserName(formData.name?.trim() || null);
       setInitialFormData(formData);
       setIsEditing(false);
       setConfirmModalOpen(false);
+      setSuccessMessage(response.data?.message ?? MESSAGES.MY_PROFILE_SAVED);
       setSuccessModalOpen(true);
     } catch (err) {
       console.error('회원 정보 저장 실패', err);
@@ -209,7 +211,7 @@ const MyProfile = () => {
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
           <div className="bg-[#1a1335] border border-white/10 rounded-2xl p-6 max-w-sm w-full shadow-xl animate-in fade-in zoom-in duration-200">
             <p className="text-white text-center text-lg font-medium mb-6">
-              {MESSAGES.MY_PROFILE_SAVED}
+              {successMessage}
             </p>
             <button
               type="button"

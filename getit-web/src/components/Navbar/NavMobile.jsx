@@ -2,7 +2,7 @@ import React from 'react';
 import { Link } from 'react-router-dom';
 import { LogOut } from 'lucide-react';
 import { ROLES } from '../../constants';
-import { PUBLIC_LINKS, MEMBER_LINKS, ADMIN_LINK } from './navLinks';
+import { PUBLIC_LINKS, MY_PROFILE_LINK, MEMBER_LINKS, ADMIN_LINK } from './navLinks';
 
 const linkBase = 'py-3 px-4 rounded-xl text-base font-medium';
 const linkPublic = 'text-gray-300 hover:text-cyan-400 hover:bg-white/5 transition-colors text-center';
@@ -30,6 +30,13 @@ const NavMobile = ({ auth, onLogout, onClose }) => {
       {isLoggedIn ? (
         <>
           <div className="border-t border-white/10 my-1" aria-hidden="true" />
+          <Link
+            to={MY_PROFILE_LINK.to}
+            onClick={onClose}
+            className={`${linkBase} ${linkPublic}`}
+          >
+            <MY_PROFILE_LINK.Icon size={18} /> {MY_PROFILE_LINK.label}
+          </Link>
           {(isMember || userRole === ROLES.ADMIN) && (
             <div className="flex flex-col gap-1">
               {MEMBER_LINKS.map(({ to, label, Icon }) => (

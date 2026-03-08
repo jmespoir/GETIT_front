@@ -14,8 +14,8 @@ const NavMobile = ({ auth, onLogout, onClose }) => {
   const { userRole, isLoggedIn, isMember } = auth ?? {};
 
   return (
-    <nav className="flex-1 min-h-0 flex flex-col justify-evenly px-4 py-4 overflow-y-auto">
-      <div className="flex flex-col gap-2">
+    <nav className="flex-shrink-0 flex flex-col justify-start pt-6 pb-4 px-4 overflow-y-auto">
+      <div className="flex flex-col gap-2 flex-shrink-0">
         {PUBLIC_LINKS.map(({ to, label }) => (
           <Link
             key={to}

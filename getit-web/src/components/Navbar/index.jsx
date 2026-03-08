@@ -52,7 +52,10 @@ const Navbar = ({ auth }) => {
               <X size={28} />
             </button>
           </div>
-          <NavMobile auth={auth} onLogout={handleLogout} onClose={closeMenu} />
+          {/* D: 메뉴는 내용 높이만 사용, 나머지 영역은 dim */}
+          <div className="flex-shrink-0 min-h-0 overflow-y-auto">
+            <NavMobile auth={auth} onLogout={handleLogout} onClose={closeMenu} />
+          </div>
         </div>
       )}
     </nav>

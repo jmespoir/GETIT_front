@@ -11,7 +11,8 @@ const linkMember = 'text-cyan-400 bg-white/5 border border-white/10 border-l-4 b
 const linkAdmin = 'text-violet-400 bg-violet-900/20 border border-violet-500/40 border-l-4 border-l-violet-500/70 hover:bg-violet-900/30 transition-colors flex items-center justify-center gap-2';
 
 const NavMobile = ({ auth, onLogout, onClose }) => {
-  const { userRole, isLoggedIn, isMember } = auth ?? {};
+  const { userRole, isLoggedIn, isMember, userName } = auth ?? {};
+  const displayName = userName?.trim() || '회원';
 
   return (
     <nav className="flex-shrink-0 flex flex-col justify-start pt-6 pb-4 px-4 overflow-y-auto">

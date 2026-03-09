@@ -2,6 +2,7 @@ import { BrowserRouter, Routes, Route, useLocation, useNavigate, Navigate } from
 import { useEffect } from 'react';
 import { MESSAGES, ROLES } from './constants';
 import { useAuth } from './hooks/useAuth';
+import { useAuthStore } from './hooks/authStore';
 import api from './api/axios';
 import Navbar from './components/Navbar';
 import Home from './pages/Public/Home.jsx';
@@ -56,11 +57,21 @@ function App() {
         const name = response.data?.name;
         if (name != null && typeof name === 'string') setUserName(name.trim() || null);
       } catch {
-        // 401 등은 axios 인터셉터에서 처리, 여기서는 무시
+        // exp 없을 때 등: 유저 정보 로드 실패 시 로그아웃 (401은 인터셉터에서 리다이렉트)
+        useAuthStore.getState().logout();
       }
     };
     syncMemberName();
   }, [isLoggedIn, setUserName]);
+
+  // 탭 전환 시 토큰 만료 여부 확인
+  useEffect(() => {
+    const handler = () => {
+      if (document.visibilityState === 'visible') useAuthStore.getState().checkAndClearExpiry();
+    };
+    document.addEventListener('visibilitychange', handler);
+    return () => document.removeEventListener('visibilitychange', handler);
+  }, []);
 
   return (
     <BrowserRouter>

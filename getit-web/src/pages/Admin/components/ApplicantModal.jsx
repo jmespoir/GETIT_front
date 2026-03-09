@@ -2,6 +2,7 @@ import React from 'react';
 import { X } from 'lucide-react';
 import questions from '../../../resources/Apply/question.json';
 import { ADMIN_APPLY_MESSAGES } from '../../../constants';
+import { COLLEGE_LIST } from '../../Auth/ProfileSetup/components/CollegeSelect';
 
 const ApplicantModal = ({ applicant, onClose }) => {
   if (!applicant) return null;
@@ -50,7 +51,9 @@ const ApplicantModal = ({ applicant, onClose }) => {
             </div>
             <div>
               <span className="text-gray-500 block mb-0.5">단과대</span>
-              <span className="text-white font-medium">{applicant.college ?? '-'}</span>
+              <span className="text-white font-medium">
+                {COLLEGE_LIST.find((c) => c.id === applicant.college)?.name ?? applicant.college ?? '-'}
+              </span>
             </div>
             <div>
               <span className="text-gray-500 block mb-0.5">학과</span>

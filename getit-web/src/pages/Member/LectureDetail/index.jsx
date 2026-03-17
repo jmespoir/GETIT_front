@@ -5,6 +5,7 @@ import {
   Upload, Check, X, Download, MessageCircle, Send,
 } from 'lucide-react';
 import api from '../../../api/axios';
+import { useAuth } from '../../../hooks/useAuth';
 import { API, MESSAGES, LECTURE_PAGE_MESSAGES } from '../../../constants';
 
 /** 유튜브 URL에서 videoId 추출 */
@@ -23,6 +24,7 @@ function getYoutubeVideoId(url) {
 const LectureDetail = () => {
   const { id } = useParams();
   const navigate = useNavigate();
+  const { isMember } = useAuth();
   const [lecture, setLecture] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -31,6 +33,7 @@ const LectureDetail = () => {
   const [uploadStatus, setUploadStatus] = useState('IDLE');
   const [qnaInput, setQnaInput] = useState('');
   const [qnaMessages, setQnaMessages] = useState([]);
+  const [qnaSubmitting, setQnaSubmitting] = useState(false);
 
   useEffect(() => {
     if (!id) {
@@ -44,12 +47,13 @@ const LectureDetail = () => {
       .finally(() => setLoading(false));
   }, [id]);
 
+  // Q&A 조회/등록은 MEMBER 전용 API이므로 관리자일 때는 호출하지 않음 (403 방지)
   useEffect(() => {
-    if (!lecture?.id) return;
+    if (!lecture?.id || !isMember) return;
     api.get(`/api/lecture/${lecture.id}/qna/me`)
       .then((res) => setQnaMessages(Array.isArray(res.data) ? res.data : []))
       .catch(() => setQnaMessages([]));
-  }, [lecture?.id]);
+  }, [lecture?.id, isMember]);
 
   const videoId = lecture?.videoUrl ? getYoutubeVideoId(lecture.videoUrl) : null;
 
@@ -85,8 +89,10 @@ const LectureDetail = () => {
   };
 
   const handleSendQuestion = () => {
+    if (!isMember) return;
     const text = (qnaInput || '').trim();
-    if (!text || !lecture?.id) return;
+    if (!text || !lecture?.id || qnaSubmitting) return;
+    setQnaSubmitting(true);
     api
       .post(`/api/lecture/${lecture.id}/qna`, { content: text })
       .then(() => {
@@ -94,7 +100,8 @@ const LectureDetail = () => {
         return api.get(`/api/lecture/${lecture.id}/qna/me`);
       })
       .then((res) => setQnaMessages(Array.isArray(res.data) ? res.data : []))
-      .catch(() => alert('질문 등록에 실패했습니다.'));
+      .catch(() => alert('질문 등록에 실패했습니다.'))
+      .finally(() => setQnaSubmitting(false));
   };
 
   if (loading) {
@@ -223,7 +230,9 @@ const LectureDetail = () => {
               <MessageCircle size={18} className="text-green-400" /> Q&A
             </h3>
             <div className="flex-1 overflow-y-auto bg-black/20 rounded-xl mb-3 p-3 space-y-3 min-h-0">
-              {qnaMessages.length === 0 ? (
+              {!isMember ? (
+                <p className="text-gray-500 text-sm">Q&A는 멤버만 이용할 수 있습니다. 관리자는 부원 학습 관리 &gt; Q&A 확인에서 답변을 등록할 수 있습니다.</p>
+              ) : qnaMessages.length === 0 ? (
                 <p className="text-gray-500 text-sm">{LECTURE_PAGE_MESSAGES.QNA_NO_MESSAGES}</p>
               ) : (
                 qnaMessages.map((msg) => (
@@ -236,25 +245,32 @@ const LectureDetail = () => {
                 ))
               )}
             </div>
-            <div className="flex gap-2">
-              <input
-                type="text"
-                value={qnaInput}
-                onChange={(e) => setQnaInput(e.target.value)}
-                onKeyDown={(e) => e.key === 'Enter' && handleSendQuestion()}
-                placeholder={LECTURE_PAGE_MESSAGES.QNA_PLACEHOLDER}
-                className="flex-1 bg-black/30 border border-white/10 rounded-lg pl-3 pr-3 py-2 text-sm text-white placeholder-gray-500 focus:outline-none focus:border-cyan-500"
-              />
-              <button
-                type="button"
-                onClick={handleSendQuestion}
-                disabled={!qnaInput?.trim()}
-                className="p-2 rounded-lg bg-cyan-600 text-white hover:bg-cyan-500 disabled:opacity-50 disabled:cursor-not-allowed"
-                aria-label={LECTURE_PAGE_MESSAGES.QNA_SEND}
-              >
-                <Send size={18} />
-              </button>
-            </div>
+            {isMember && (
+              <div className="flex gap-2">
+                <input
+                  type="text"
+                  value={qnaInput}
+                  onChange={(e) => setQnaInput(e.target.value)}
+                  onKeyDown={(e) => {
+                    if (e.key !== 'Enter') return;
+                    e.preventDefault();
+                    e.stopPropagation();
+                    handleSendQuestion();
+                  }}
+                  placeholder={LECTURE_PAGE_MESSAGES.QNA_PLACEHOLDER}
+                  className="flex-1 bg-black/30 border border-white/10 rounded-lg pl-3 pr-3 py-2 text-sm text-white placeholder-gray-500 focus:outline-none focus:border-cyan-500"
+                />
+                <button
+                  type="button"
+                  onClick={handleSendQuestion}
+                  disabled={!qnaInput?.trim() || qnaSubmitting}
+                  className="p-2 rounded-lg bg-cyan-600 text-white hover:bg-cyan-500 disabled:opacity-50 disabled:cursor-not-allowed"
+                  aria-label={LECTURE_PAGE_MESSAGES.QNA_SEND}
+                >
+                  <Send size={18} />
+                </button>
+              </div>
+            )}
           </div>
         </div>
       </div>

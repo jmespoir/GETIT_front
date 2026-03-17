@@ -133,173 +133,199 @@ function MembersListView() {
 }
 
 function QnaManagementView() {
-  const [lectures, setLectures] = useState([]);
-  const [selectedLectureId, setSelectedLectureId] = useState(null);
-  const [rooms, setRooms] = useState([]);
-  const [selectedMemberId, setSelectedMemberId] = useState(null);
+  const [boardRows, setBoardRows] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [expanded, setExpanded] = useState(null); // { lectureId, memberId }
   const [messages, setMessages] = useState([]);
-  const [answerByQna, setAnswerByQna] = useState({});
-  const [loadingLectures, setLoadingLectures] = useState(true);
-  const [loadingRooms, setLoadingRooms] = useState(false);
   const [loadingChat, setLoadingChat] = useState(false);
+  const [answerByQna, setAnswerByQna] = useState({});
 
   useEffect(() => {
+    setLoading(true);
     api.get(API.PATHS.LECTURES, { params: { size: 100 } })
       .then((res) => {
         const content = res.data?.content ?? [];
         if (content.length === 0) {
-          setLectures([]);
-          setLoadingLectures(false);
+          setBoardRows([]);
+          setLoading(false);
           return;
         }
-        Promise.all(
+        return Promise.all(
           content.map((item) =>
             api.get(API.PATHS.LECTURE_DETAIL(item.lectureId)).then((r) => ({
               lectureId: r.data.lectureId,
-              title: r.data.title,
-              id: r.data.lectureId,
+              title: r.data.title || '',
             }))
           )
-        ).then((list) => {
-          const sorted = [...list].sort((a, b) => String(a.title).localeCompare(b.title));
-          setLectures(sorted);
+        ).then((lectureList) => {
+          const sorted = [...lectureList].sort((a, b) => String(a.title).localeCompare(b.title));
+          return Promise.all(
+            sorted.map((lec) =>
+              api.get(`/api/lecture/${lec.lectureId}/qna/rooms`).then((roomsRes) => {
+                const rooms = Array.isArray(roomsRes.data) ? roomsRes.data : [];
+                return rooms.map((r) => ({
+                  lectureId: lec.lectureId,
+                  lectureTitle: lec.title,
+                  memberId: r.memberId,
+                  memberName: r.memberName ?? `멤버 ${r.memberId}`,
+                  lastMessage: r.lastMessage ?? '',
+                  lastMessageAt: r.lastMessageAt ?? null,
+                  unanswered: !!r.unanswered,
+                }));
+              })
+            )
+          ).then((arrays) => {
+            const flat = arrays.flat();
+            flat.sort((a, b) => {
+              const ta = a.lastMessageAt ? new Date(a.lastMessageAt).getTime() : 0;
+              const tb = b.lastMessageAt ? new Date(b.lastMessageAt).getTime() : 0;
+              return tb - ta;
+            });
+            setBoardRows(flat);
+          });
         });
       })
-      .catch(() => setLectures([]))
-      .finally(() => setLoadingLectures(false));
+      .catch(() => setBoardRows([]))
+      .finally(() => setLoading(false));
   }, []);
 
   useEffect(() => {
-    if (!selectedLectureId) {
-      setRooms([]);
-      setSelectedMemberId(null);
-      setMessages([]);
-      return;
-    }
-    setLoadingRooms(true);
-    api.get(`/api/lecture/${selectedLectureId}/qna/rooms`)
-      .then((res) => setRooms(Array.isArray(res.data) ? res.data : []))
-      .catch(() => setRooms([]))
-      .finally(() => setLoadingRooms(false));
-    setSelectedMemberId(null);
-    setMessages([]);
-  }, [selectedLectureId]);
-
-  useEffect(() => {
-    if (!selectedLectureId || !selectedMemberId) {
+    if (!expanded) {
       setMessages([]);
       return;
     }
     setLoadingChat(true);
-    api.get(`/api/lecture/${selectedLectureId}/qna/rooms/${selectedMemberId}`)
+    api.get(`/api/lecture/${expanded.lectureId}/qna/rooms/${expanded.memberId}`)
       .then((res) => setMessages(Array.isArray(res.data) ? res.data : []))
       .catch(() => setMessages([]))
       .finally(() => setLoadingChat(false));
-  }, [selectedLectureId, selectedMemberId]);
+  }, [expanded]);
 
-  const submitAnswer = (qnaId) => {
+  const submitAnswer = (lectureId, qnaId) => {
     const content = (answerByQna[qnaId] || '').trim();
-    if (!content || !selectedLectureId) return;
-    api.post(`/api/lecture/${selectedLectureId}/qna/${qnaId}/answer`, { content })
+    if (!content || !lectureId) return;
+    api.post(`/api/lecture/${lectureId}/qna/${qnaId}/answer`, { content })
       .then(() => {
         setAnswerByQna((prev) => ({ ...prev, [qnaId]: '' }));
-        if (selectedMemberId) {
-          api.get(`/api/lecture/${selectedLectureId}/qna/rooms/${selectedMemberId}`)
+        if (expanded && expanded.lectureId === lectureId && expanded.memberId) {
+          api.get(`/api/lecture/${lectureId}/qna/rooms/${expanded.memberId}`)
             .then((res) => setMessages(Array.isArray(res.data) ? res.data : []));
         }
       })
       .catch(() => alert('답변 등록에 실패했습니다.'));
   };
 
+  const toggleExpand = (row) => {
+    const key = row.lectureId + '-' + row.memberId;
+    const next = expanded && expanded.lectureId === row.lectureId && expanded.memberId === row.memberId ? null : { lectureId: row.lectureId, memberId: row.memberId };
+    setExpanded(next);
+    if (next) setAnswerByQna({});
+  };
+
+  const preview = (text, max = 40) => {
+    if (!text) return '—';
+    const t = String(text).replace(/\s+/g, ' ').trim();
+    return t.length <= max ? t : t.slice(0, max) + '…';
+  };
+
+  const formatDate = (d) => (d ? new Date(d).toLocaleString('ko-KR', { dateStyle: 'short', timeStyle: 'short' }) : '—');
+
+  if (loading) return <LoadingState message={ADMIN_MEMBER_MESSAGES.QNA_LOADING} />;
+
   return (
-    <div className="space-y-6">
-      <div>
-        <label className="block text-sm font-medium text-gray-400 mb-2">{ADMIN_MEMBER_MESSAGES.QNA_SELECT_LECTURE}</label>
-        <select
-          value={selectedLectureId ?? ''}
-          onChange={(e) => setSelectedLectureId(e.target.value ? Number(e.target.value) : null)}
-          className="w-full max-w-md bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white focus:outline-none focus:border-cyan-500"
-        >
-          <option value="">-- 선택 --</option>
-          {lectures.map((l) => (
-            <option key={l.lectureId ?? l.id} value={l.lectureId ?? l.id}>
-              {l.title}
-            </option>
-          ))}
-        </select>
-      </div>
-
-      {loadingLectures && <p className="text-gray-500">{ADMIN_MEMBER_MESSAGES.LOADING}</p>}
-      {!loadingLectures && lectures.length === 0 && <p className="text-gray-500">{ADMIN_MEMBER_MESSAGES.QNA_NO_LECTURES}</p>}
-
-      {selectedLectureId && (
-        <>
-          {loadingRooms ? (
-            <p className="text-gray-500">{ADMIN_MEMBER_MESSAGES.LOADING}</p>
-          ) : rooms.length === 0 ? (
-            <p className="text-gray-500">{ADMIN_MEMBER_MESSAGES.QNA_NO_ROOMS}</p>
-          ) : (
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              <div>
-                <h4 className="font-bold mb-2 text-gray-300">{ADMIN_MEMBER_MESSAGES.QNA_ROOMS}</h4>
-                <ul className="space-y-2">
-                  {rooms.map((r) => (
-                    <li key={r.memberId}>
-                      <button
-                        type="button"
-                        onClick={() => setSelectedMemberId(r.memberId)}
-                        className={`w-full text-left px-4 py-3 rounded-xl border transition-colors ${
-                          selectedMemberId === r.memberId
-                            ? 'bg-cyan-600/30 border-cyan-500 text-white'
-                            : 'bg-white/5 border-white/10 text-gray-300 hover:bg-white/10'
-                        }`}
-                      >
-                        <span className="font-medium">{r.memberName ?? `멤버 ${r.memberId}`}</span>
-                        {r.unanswered && <span className="ml-2 text-xs text-amber-400">미답변</span>}
-                      </button>
-                    </li>
-                  ))}
-                </ul>
-              </div>
-              <div>
-                <h4 className="font-bold mb-2 text-gray-300">채팅 내용</h4>
-                <div className="bg-white/5 border border-white/10 rounded-xl p-4 min-h-[200px] max-h-[400px] overflow-y-auto space-y-3">
-                  {loadingChat ? (
-                    <p className="text-gray-500">{ADMIN_MEMBER_MESSAGES.LOADING}</p>
-                  ) : (
-                    messages.map((msg) => (
-                      <div key={msg.id} className={msg.sender === 'ADMIN' ? 'pl-4 border-l-2 border-cyan-500/30' : ''}>
-                        <p className="text-sm text-gray-200 whitespace-pre-wrap">{msg.content}</p>
-                        <p className="text-xs text-gray-500">
-                          {msg.sender === 'USER' ? '멤버' : '관리자'} · {msg.createdAt ? new Date(msg.createdAt).toLocaleString() : ''}
-                        </p>
-                        {msg.sender === 'USER' && (
-                          <div className="mt-2 flex gap-2">
-                            <input
-                              type="text"
-                              value={answerByQna[msg.id] ?? ''}
-                              onChange={(e) => setAnswerByQna((prev) => ({ ...prev, [msg.id]: e.target.value }))}
-                              placeholder={ADMIN_MEMBER_MESSAGES.QNA_ANSWER_PLACEHOLDER}
-                              className="flex-1 bg-black/30 border border-white/10 rounded-lg px-3 py-2 text-sm text-white placeholder-gray-500 focus:outline-none focus:border-cyan-500"
-                            />
-                            <button
-                              type="button"
-                              onClick={() => submitAnswer(msg.id)}
-                              disabled={!(answerByQna[msg.id] || '').trim()}
-                              className="px-4 py-2 bg-cyan-600 text-white font-bold rounded-lg text-sm disabled:opacity-50"
-                            >
-                              {ADMIN_MEMBER_MESSAGES.QNA_SUBMIT_ANSWER}
-                            </button>
-                          </div>
+    <div className="space-y-4">
+      <h3 className="text-lg font-bold text-gray-200">{ADMIN_MEMBER_MESSAGES.QNA_BOARD_TITLE}</h3>
+      {boardRows.length === 0 ? (
+        <p className="text-gray-500 py-8">{ADMIN_MEMBER_MESSAGES.QNA_BOARD_EMPTY}</p>
+      ) : (
+        <div className="overflow-x-auto">
+          <table className="w-full text-left border-collapse min-w-[640px]">
+            <thead>
+              <tr className="border-b border-white/10 text-gray-400 text-sm uppercase tracking-wider">
+                <th className="p-3">{ADMIN_MEMBER_MESSAGES.QNA_COLUMN_LECTURE}</th>
+                <th className="p-3">{ADMIN_MEMBER_MESSAGES.QNA_COLUMN_MEMBER}</th>
+                <th className="p-3">{ADMIN_MEMBER_MESSAGES.QNA_COLUMN_PREVIEW}</th>
+                <th className="p-3">{ADMIN_MEMBER_MESSAGES.QNA_COLUMN_DATE}</th>
+                <th className="p-3 text-center">{ADMIN_MEMBER_MESSAGES.QNA_COLUMN_STATUS}</th>
+                <th className="p-3 w-24" />
+              </tr>
+            </thead>
+            <tbody>
+              {boardRows.map((row) => {
+                const rowKey = `${row.lectureId}-${row.memberId}`;
+                const isExpanded = expanded && expanded.lectureId === row.lectureId && expanded.memberId === row.memberId;
+                return (
+                  <React.Fragment key={rowKey}>
+                    <tr className="border-b border-white/5 hover:bg-white/5 transition-colors">
+                      <td className="p-3 font-medium text-cyan-300">{row.lectureTitle}</td>
+                      <td className="p-3 font-medium text-gray-200">{row.memberName}</td>
+                      <td className="p-3 text-gray-400 text-sm max-w-[200px] truncate" title={row.lastMessage}>
+                        {preview(row.lastMessage)}
+                      </td>
+                      <td className="p-3 text-gray-500 text-sm whitespace-nowrap">{formatDate(row.lastMessageAt)}</td>
+                      <td className="p-3 text-center">
+                        {row.unanswered ? (
+                          <span className="text-xs font-bold text-amber-400">{ADMIN_MEMBER_MESSAGES.QNA_UNANSWERED}</span>
+                        ) : (
+                          <span className="text-xs text-gray-500">{ADMIN_MEMBER_MESSAGES.QNA_ANSWERED}</span>
                         )}
-                      </div>
-                    ))
-                  )}
-                </div>
-              </div>
-            </div>
-          )}
-        </>
+                      </td>
+                      <td className="p-3">
+                        <button
+                          type="button"
+                          onClick={() => toggleExpand(row)}
+                          className="px-3 py-1.5 bg-cyan-600 text-white text-sm font-bold rounded-lg hover:bg-cyan-500"
+                        >
+                          {ADMIN_MEMBER_MESSAGES.QNA_ACTION_ANSWER}
+                        </button>
+                      </td>
+                    </tr>
+                    {isExpanded && (
+                      <tr className="bg-white/5">
+                        <td colSpan={6} className="p-4">
+                          <div className="bg-black/20 border border-white/10 rounded-xl p-4 max-h-[320px] overflow-y-auto space-y-3">
+                            {loadingChat ? (
+                              <p className="text-gray-500">{ADMIN_MEMBER_MESSAGES.LOADING}</p>
+                            ) : (
+                              messages.map((msg) => (
+                                <div key={msg.id} className={msg.sender === 'ADMIN' ? 'pl-4 border-l-2 border-cyan-500/30' : ''}>
+                                  <p className="text-sm text-gray-200 whitespace-pre-wrap">{msg.content}</p>
+                                  <p className="text-xs text-gray-500">
+                                    {msg.sender === 'USER' ? '멤버' : '관리자'} · {msg.createdAt ? new Date(msg.createdAt).toLocaleString('ko-KR') : ''}
+                                  </p>
+                                  {msg.sender === 'USER' && (
+                                    <div className="mt-2 flex gap-2">
+                                      <input
+                                        type="text"
+                                        value={answerByQna[msg.id] ?? ''}
+                                        onChange={(e) => setAnswerByQna((prev) => ({ ...prev, [msg.id]: e.target.value }))}
+                                        placeholder={ADMIN_MEMBER_MESSAGES.QNA_ANSWER_PLACEHOLDER}
+                                        className="flex-1 bg-black/30 border border-white/10 rounded-lg px-3 py-2 text-sm text-white placeholder-gray-500 focus:outline-none focus:border-cyan-500"
+                                      />
+                                      <button
+                                        type="button"
+                                        onClick={() => submitAnswer(row.lectureId, msg.id)}
+                                        disabled={!(answerByQna[msg.id] || '').trim()}
+                                        className="px-4 py-2 bg-cyan-600 text-white font-bold rounded-lg text-sm disabled:opacity-50"
+                                      >
+                                        {ADMIN_MEMBER_MESSAGES.QNA_SUBMIT_ANSWER}
+                                      </button>
+                                    </div>
+                                  )}
+                                </div>
+                              ))
+                            )}
+                            {!loadingChat && messages.length === 0 && <p className="text-gray-500 text-sm">{ADMIN_MEMBER_MESSAGES.QNA_NO_MESSAGES}</p>}
+                          </div>
+                        </td>
+                      </tr>
+                    )}
+                  </React.Fragment>
+                );
+              })}
+            </tbody>
+          </table>
+        </div>
       )}
     </div>
   );

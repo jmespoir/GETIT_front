@@ -6,6 +6,7 @@ import {
 } from 'lucide-react';
 import api from '../../../api/axios';
 import { useAuth } from '../../../hooks/useAuth';
+import PdfViewer from '../../../components/PdfViewer';
 import { API, MESSAGES, LECTURE_PAGE_MESSAGES } from '../../../constants';
 
 /** Q&A 메시지를 질문 단위로 묶음. 백엔드 qnaId 있으면 답변을 해당 질문 밑에 붙임. */
@@ -103,11 +104,13 @@ const LectureDetail = () => {
     setUploadStatus('UPLOADING');
     const formData = new FormData();
     formData.append('files', selectedFile);
-    const week = Number(lecture.week) || 1;
-    const type = lecture.type === 'STARTUP' ? 'STARTUP' : 'SW';
     const githubUrlTrimmed = (githubUrl || '').trim() || null;
     const requestBlob = new Blob(
-      [JSON.stringify({ week, type, comment: '', githubUrl: githubUrlTrimmed })],
+      [JSON.stringify({
+        lectureId: lecture.id,
+        comment: '',
+        githubUrl: githubUrlTrimmed,
+      })],
       { type: 'application/json' }
     );
     formData.append('request', requestBlob, 'request.json');
@@ -182,8 +185,16 @@ const LectureDetail = () => {
 
       <div className="max-w-7xl mx-auto grid grid-cols-1 lg:grid-cols-3 gap-8">
         <div className="lg:col-span-2 space-y-6">
-          <div className="relative w-full aspect-video bg-black rounded-2xl overflow-hidden shadow-2xl border border-white/10">
-            {videoId ? (
+          <div className="relative w-full aspect-video bg-black rounded-2xl overflow-hidden shadow-2xl border border-white/10 min-h-[360px]">
+            {!videoId && lecture.resourceUrl ? (
+              <div className="absolute inset-0 overflow-auto">
+                <PdfViewer
+                  file={lecture.resourceUrl}
+                  className="w-full min-h-full"
+                  downloadLabel={LECTURE_PAGE_MESSAGES.MATERIAL_VIEW_LINK}
+                />
+              </div>
+            ) : videoId ? (
               <>
                 <iframe
                   title="강의 영상"

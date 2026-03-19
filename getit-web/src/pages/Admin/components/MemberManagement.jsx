@@ -449,6 +449,7 @@ function AssignmentsListView() {
             <th className="p-4">과제</th>
             <th className="p-4">제출일</th>
             <th className="p-4">파일</th>
+            <th className="p-4">{ADMIN_MEMBER_MESSAGES.ASSIGNMENTS_GITHUB}</th>
             <th className="p-4">다운로드</th>
           </tr>
         </thead>
@@ -465,6 +466,21 @@ function AssignmentsListView() {
                 {Array.isArray(a.files) && a.files.length > 0
                   ? a.files.map((f) => <span key={f.fileId} className="block text-sm">{f.fileName}</span>)
                   : '-'}
+              </td>
+              <td className="p-4">
+                {a.githubUrl ? (
+                  <a
+                    href={a.githubUrl}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="inline-flex items-center gap-1 text-cyan-400 text-xs font-medium hover:underline truncate max-w-[140px]"
+                    title={a.githubUrl}
+                  >
+                    {ADMIN_MEMBER_MESSAGES.ASSIGNMENTS_GITHUB}
+                  </a>
+                ) : (
+                  <span className="text-xs text-gray-500">-</span>
+                )}
               </td>
               <td className="p-4">
                 {Array.isArray(a.files) && a.files.length > 0 ? (

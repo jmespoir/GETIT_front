@@ -61,6 +61,7 @@ const LectureDetail = () => {
   const [error, setError] = useState(null);
   const [videoLoadError, setVideoLoadError] = useState(false);
   const [selectedFile, setSelectedFile] = useState(null);
+  const [githubUrl, setGithubUrl] = useState('');
   const [uploadStatus, setUploadStatus] = useState('IDLE');
   const [qnaInput, setQnaInput] = useState('');
   const [qnaMessages, setQnaMessages] = useState([]);
@@ -104,8 +105,9 @@ const LectureDetail = () => {
     formData.append('files', selectedFile);
     const week = Number(lecture.week) || 1;
     const type = lecture.type === 'STARTUP' ? 'STARTUP' : 'SW';
+    const githubUrlTrimmed = (githubUrl || '').trim() || null;
     const requestBlob = new Blob(
-      [JSON.stringify({ week, type, comment: '' })],
+      [JSON.stringify({ week, type, comment: '', githubUrl: githubUrlTrimmed })],
       { type: 'application/json' }
     );
     formData.append('request', requestBlob, 'request.json');
@@ -264,6 +266,18 @@ const LectureDetail = () => {
                     </button>
                   </div>
                 )}
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-400 mb-1">
+                  {LECTURE_PAGE_MESSAGES.ASSIGNMENT_GITHUB_LABEL}
+                </label>
+                <input
+                  type="url"
+                  value={githubUrl}
+                  onChange={(e) => setGithubUrl(e.target.value)}
+                  placeholder={LECTURE_PAGE_MESSAGES.ASSIGNMENT_GITHUB_PLACEHOLDER}
+                  className="w-full bg-black/30 border border-white/10 rounded-lg px-3 py-2 text-sm text-white placeholder-gray-500 focus:outline-none focus:border-cyan-500"
+                />
               </div>
               <button
                 type="button"

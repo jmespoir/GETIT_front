@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Plus, Pencil, Trash2 } from 'lucide-react';
+import { Plus, Pencil, Trash2, FileText, X } from 'lucide-react';
 import api from '../../../api/axios';
 import { API, LECTURE_TRACK } from '../../../constants';
 import { ADMIN_LECTURE_MESSAGES } from '../../../constants';
@@ -11,6 +11,14 @@ const LectureManagement = () => {
   const [showForm, setShowForm] = useState(false);
   const [editingId, setEditingId] = useState(null);
   const [editingLecture, setEditingLecture] = useState(null);
+  // 과제(Task) 모달
+  const [taskModalLectureId, setTaskModalLectureId] = useState(null);
+  const [taskModalLectureTitle, setTaskModalLectureTitle] = useState('');
+  const [taskData, setTaskData] = useState(null);
+  const [taskLoading, setTaskLoading] = useState(false);
+  const [taskSaving, setTaskSaving] = useState(false);
+  const [taskDeleting, setTaskDeleting] = useState(false);
+  const [taskForm, setTaskForm] = useState({ title: '', description: '', deadline: '' });
 
   const loadList = () => {
     setLoading(true);
@@ -90,6 +98,92 @@ const LectureManagement = () => {
     }).catch(() => alert('삭제에 실패했습니다.'));
   };
 
+  const openTaskModal = (lec) => {
+    setTaskModalLectureId(lec.id);
+    setTaskModalLectureTitle(lec.title || '(제목 없음)');
+    setTaskData(null);
+    setTaskForm({ title: '', description: '', deadline: '' });
+  };
+
+  const closeTaskModal = () => {
+    setTaskModalLectureId(null);
+    setTaskModalLectureTitle('');
+    setTaskData(null);
+    setTaskLoading(false);
+    setTaskSaving(false);
+    setTaskDeleting(false);
+  };
+
+  useEffect(() => {
+    if (taskModalLectureId == null) return;
+    setTaskLoading(true);
+    api
+      .get(`/api/admin/lecture/${taskModalLectureId}/task`)
+      .then((res) => {
+        const t = res.data;
+        setTaskData(t);
+        const deadlineInput = t.deadline ? String(t.deadline).slice(0, 16) : '';
+        setTaskForm({
+          title: t.title ?? '',
+          description: t.description ?? '',
+          deadline: deadlineInput,
+        });
+      })
+      .catch((err) => {
+        if (err.response?.status === 404) setTaskData(null);
+        else alert(ADMIN_LECTURE_MESSAGES.TASK_LOAD_ERROR);
+      })
+      .finally(() => setTaskLoading(false));
+  }, [taskModalLectureId]);
+
+  const handleTaskSave = () => {
+    if (!taskModalLectureId || taskSaving) return;
+    const title = (taskForm.title ?? '').trim();
+    const description = (taskForm.description ?? '').trim();
+    if (!title) {
+      alert('과제 제목을 입력해주세요.');
+      return;
+    }
+    if (!description) {
+      alert('과제 설명을 입력해주세요.');
+      return;
+    }
+    setTaskSaving(true);
+    const payload = {
+      title,
+      description,
+      deadline: (taskForm.deadline ?? '').trim() ? `${taskForm.deadline.trim()}:00` : null,
+    };
+    api
+      .patch(`/api/admin/lecture/${taskModalLectureId}/task`, payload)
+      .then((res) => {
+        setTaskData(res.data);
+        setTaskForm({
+          title: res.data.title ?? '',
+          description: res.data.description ?? '',
+          deadline: res.data.deadline ? String(res.data.deadline).slice(0, 16) : '',
+        });
+        alert(ADMIN_LECTURE_MESSAGES.TASK_SAVE_SUCCESS);
+      })
+      .catch(() => alert(ADMIN_LECTURE_MESSAGES.TASK_SAVE_ERROR))
+      .finally(() => setTaskSaving(false));
+  };
+
+  const handleTaskDelete = () => {
+    if (!taskModalLectureId || taskDeleting) return;
+    if (!window.confirm(ADMIN_LECTURE_MESSAGES.TASK_DELETE_CONFIRM)) return;
+    setTaskDeleting(true);
+    api
+      .delete(`/api/admin/lecture/${taskModalLectureId}/task`)
+      .then(() => {
+        closeTaskModal();
+        loadList();
+        alert(ADMIN_LECTURE_MESSAGES.TASK_DELETE_SUCCESS);
+      })
+      .catch(() => alert(ADMIN_LECTURE_MESSAGES.TASK_DELETE_ERROR))
+      .finally(() => setTaskDeleting(false));
+  };
+
   if (showForm) {
     return (
       <div>
@@ -143,6 +237,14 @@ const LectureManagement = () => {
               <div className="flex items-center gap-2">
                 <button
                   type="button"
+                  onClick={() => openTaskModal(lec)}
+                  className="p-2 rounded-lg text-gray-400 hover:text-purple-400 hover:bg-white/10"
+                  title={ADMIN_LECTURE_MESSAGES.TASK_MANAGE}
+                >
+                  <FileText size={18} />
+                </button>
+                <button
+                  type="button"
                   onClick={() => handleEdit(lec)}
                   className="p-2 rounded-lg text-gray-400 hover:text-cyan-400 hover:bg-white/10"
                   title={ADMIN_LECTURE_MESSAGES.EDIT}
@@ -160,6 +262,82 @@ const LectureManagement = () => {
               </div>
             </div>
           ))}
+        </div>
+      )}
+
+      {taskModalLectureId != null && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60" onClick={closeTaskModal}>
+          <div
+            className="bg-[#161229] border border-white/10 rounded-2xl shadow-xl max-w-lg w-full max-h-[90vh] overflow-y-auto"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="flex items-center justify-between p-4 border-b border-white/10">
+              <h3 className="font-bold text-white">
+                {ADMIN_LECTURE_MESSAGES.TASK_MANAGE} · {taskModalLectureTitle}
+              </h3>
+              <button type="button" onClick={closeTaskModal} className="p-1.5 rounded-lg text-gray-400 hover:text-white hover:bg-white/10">
+                <X size={20} />
+              </button>
+            </div>
+            <div className="p-4 space-y-4">
+              {taskLoading ? (
+                <p className="text-gray-500 py-6 text-center">{ADMIN_LECTURE_MESSAGES.TASK_LOADING}</p>
+              ) : taskData == null ? (
+                <p className="text-gray-500 py-6 text-center">{ADMIN_LECTURE_MESSAGES.TASK_NOT_FOUND}</p>
+              ) : (
+                <>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-400 mb-1">{ADMIN_LECTURE_MESSAGES.TASK_TITLE}</label>
+                    <input
+                      type="text"
+                      value={taskForm.title}
+                      onChange={(e) => setTaskForm((f) => ({ ...f, title: e.target.value }))}
+                      className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white focus:outline-none focus:border-cyan-500"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-400 mb-1">{ADMIN_LECTURE_MESSAGES.TASK_DESCRIPTION}</label>
+                    <textarea
+                      value={taskForm.description}
+                      onChange={(e) => setTaskForm((f) => ({ ...f, description: e.target.value }))}
+                      rows={3}
+                      className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white focus:outline-none focus:border-cyan-500 resize-none"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-400 mb-1">{ADMIN_LECTURE_MESSAGES.TASK_DEADLINE}</label>
+                    <input
+                      type="datetime-local"
+                      value={taskForm.deadline}
+                      onChange={(e) => setTaskForm((f) => ({ ...f, deadline: e.target.value }))}
+                      className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white focus:outline-none focus:border-cyan-500"
+                    />
+                  </div>
+                  <div className="flex flex-wrap gap-2 pt-2">
+                    <button
+                      type="button"
+                      onClick={handleTaskSave}
+                      disabled={taskSaving}
+                      className="px-4 py-2 rounded-xl bg-cyan-600 text-white font-bold hover:bg-cyan-500 disabled:opacity-50"
+                    >
+                      {taskSaving ? '저장 중...' : ADMIN_LECTURE_MESSAGES.SAVE}
+                    </button>
+                    <button
+                      type="button"
+                      onClick={handleTaskDelete}
+                      disabled={taskDeleting}
+                      className="px-4 py-2 rounded-xl bg-red-600/80 text-white font-bold hover:bg-red-500/80 disabled:opacity-50"
+                    >
+                      {taskDeleting ? '삭제 중...' : ADMIN_LECTURE_MESSAGES.DELETE}
+                    </button>
+                    <button type="button" onClick={closeTaskModal} className="px-4 py-2 rounded-xl border border-white/20 text-gray-300 hover:bg-white/10">
+                      {ADMIN_LECTURE_MESSAGES.CANCEL}
+                    </button>
+                  </div>
+                </>
+              )}
+            </div>
+          </div>
         </div>
       )}
     </div>

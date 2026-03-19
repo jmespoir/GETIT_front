@@ -123,6 +123,7 @@ export const ADMIN_MEMBER_MESSAGES = {
   ASSIGNMENTS_DOWNLOAD_PREPARING: '준비 중',
   ASSIGNMENTS_DOWNLOAD: '다운로드',
   ASSIGNMENTS_DOWNLOAD_ERROR: '과제 파일 다운로드에 실패했습니다.',
+  ASSIGNMENTS_GITHUB: 'GitHub',
 };
 
 /** Admin 권한(역할 지정) 관리 문구 */
@@ -186,6 +187,19 @@ export const ADMIN_LECTURE_MESSAGES = {
   QNA_ANSWER: '답변 작성',
   QNA_ANSWER_PLACEHOLDER: '답변 내용을 입력하세요.',
   QNA_SUBMIT_ANSWER: '답변 등록',
+  // 과제(Task) 관리
+  TASK_MANAGE: '과제 관리',
+  TASK_TITLE: '과제 제목',
+  TASK_DESCRIPTION: '과제 설명',
+  TASK_DEADLINE: '마감일 (선택)',
+  TASK_LOADING: '과제 정보 로딩 중...',
+  TASK_NOT_FOUND: '이 강의에 등록된 과제가 없습니다.',
+  TASK_SAVE_SUCCESS: '과제 정보가 저장되었습니다.',
+  TASK_SAVE_ERROR: '과제 저장에 실패했습니다.',
+  TASK_DELETE_CONFIRM: '이 강의의 과제를 삭제하시겠습니까? 제출된 과제 파일도 함께 삭제됩니다.',
+  TASK_DELETE_SUCCESS: '과제가 삭제되었습니다.',
+  TASK_DELETE_ERROR: '과제 삭제에 실패했습니다.',
+  TASK_LOAD_ERROR: '과제 정보를 불러오지 못했습니다.',
 };
 
 /** 멤버 강의 목록/상세 문구 */
@@ -210,4 +224,6 @@ export const LECTURE_PAGE_MESSAGES = {
   QNA_DELETE: '삭제',
   QNA_DELETE_CONFIRM: '이 질문을 삭제할까요?',
   QNA_DELETE_ERROR: '질문 삭제에 실패했습니다.',
+  ASSIGNMENT_GITHUB_LABEL: 'GitHub 링크 (선택)',
+  ASSIGNMENT_GITHUB_PLACEHOLDER: 'https://github.com/...',
 };

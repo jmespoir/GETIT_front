@@ -108,6 +108,8 @@ const LectureDetail = () => {
     const requestBlob = new Blob(
       [JSON.stringify({
         lectureId: lecture.id,
+        week: lecture.week,
+        type: lecture.type,
         comment: '',
         githubUrl: githubUrlTrimmed,
       })],

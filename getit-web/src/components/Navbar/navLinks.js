@@ -1,4 +1,4 @@
-import { PlayCircle, TrendingUp, Settings, User } from 'lucide-react';
+import { PlayCircle, TrendingUp, Settings, User, FileText } from 'lucide-react';
 import { INVEST_APP_URL } from '../../constants';
 
 /** 공개 메뉴 (About, Executives, Recruit) */
@@ -14,6 +14,7 @@ export const MY_PROFILE_LINK = { to: '/myProfile', label: '내 정보', Icon: Us
 /** 멤버 전용 링크 (Lecture, Invest) - 모의투자는 별도 서비스라 새 탭으로 오픈 */
 export const MEMBER_LINKS = [
   { to: '/lecture', label: '강의 목록', Icon: PlayCircle },
+  { to: '/assignments', label: '내 과제', Icon: FileText },
   { external: true, href: INVEST_APP_URL, label: '모의 투자', Icon: TrendingUp },
 ];
 

@@ -64,6 +64,8 @@ const LectureDetail = () => {
   const [selectedFile, setSelectedFile] = useState(null);
   const [githubUrl, setGithubUrl] = useState('');
   const [uploadStatus, setUploadStatus] = useState('IDLE');
+  const [myAssignment, setMyAssignment] = useState(null);
+  const [myAssignmentLoading, setMyAssignmentLoading] = useState(false);
   const [qnaInput, setQnaInput] = useState('');
   const [qnaMessages, setQnaMessages] = useState([]);
   const [qnaSubmitting, setQnaSubmitting] = useState(false);
@@ -87,6 +89,21 @@ const LectureDetail = () => {
     api.get(`/api/lecture/${lecture.id}/qna/me`)
       .then((res) => setQnaMessages(Array.isArray(res.data) ? res.data : []))
       .catch(() => setQnaMessages([]));
+  }, [lecture?.id, isMember]);
+
+  // 내 과제 제출(해당 강의) + 관리자 코멘트 이력 조회
+  useEffect(() => {
+    if (!lecture?.id || !isMember) return;
+    setMyAssignmentLoading(true);
+    api.get('/api/assignments/me')
+      .then((res) => {
+        const list = res.data?.data ?? res.data; // 서버 응답 포맷 방어
+        const arr = Array.isArray(list) ? list : [];
+        const found = arr.find((a) => a.lectureId === lecture.id) || null;
+        setMyAssignment(found);
+      })
+      .catch(() => setMyAssignment(null))
+      .finally(() => setMyAssignmentLoading(false));
   }, [lecture?.id, isMember]);
 
   const videoId = lecture?.videoUrl ? getYoutubeVideoId(lecture.videoUrl) : null;
@@ -304,6 +321,32 @@ const LectureDetail = () => {
                 {uploadStatus === 'IDLE' && '과제 제출하기'}
               </button>
             </div>
+          </div>
+
+          <div className="bg-[#110b29] border border-white/10 p-6 rounded-2xl">
+            <h3 className="font-bold mb-4 flex items-center gap-2 text-gray-200">
+              <MessageCircle size={18} className="text-cyan-400" /> {LECTURE_PAGE_MESSAGES.ASSIGNMENT_FEEDBACK_TITLE}
+            </h3>
+            {!isMember ? (
+              <p className="text-gray-500 text-sm">관리자 코멘트는 멤버만 확인할 수 있습니다.</p>
+            ) : myAssignmentLoading ? (
+              <p className="text-gray-500 text-sm">{LECTURE_PAGE_MESSAGES.ASSIGNMENT_FEEDBACK_LOADING}</p>
+            ) : !myAssignment ? (
+              <p className="text-gray-500 text-sm">{LECTURE_PAGE_MESSAGES.ASSIGNMENT_FEEDBACK_EMPTY}</p>
+            ) : Array.isArray(myAssignment.feedbacks) && myAssignment.feedbacks.length > 0 ? (
+              <div className="space-y-2">
+                {myAssignment.feedbacks.map((fb) => (
+                  <div key={fb.feedbackId} className="bg-black/20 border border-white/10 rounded-xl p-3">
+                    <p className="text-sm text-gray-200 whitespace-pre-wrap">{fb.content}</p>
+                    <p className="text-xs text-gray-500 mt-1">
+                      {fb.createdAt ? new Date(fb.createdAt).toLocaleString() : ''}
+                    </p>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <p className="text-gray-500 text-sm">{LECTURE_PAGE_MESSAGES.ASSIGNMENT_FEEDBACK_EMPTY}</p>
+            )}
           </div>
 
 

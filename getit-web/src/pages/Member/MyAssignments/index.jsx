@@ -2,7 +2,7 @@ import React, { useEffect, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { ArrowLeft, FileText, MessageCircle, Download, Check, X } from 'lucide-react';
 import api from '../../../api/axios';
-import { API, LECTURE_TRACK, MESSAGES, LECTURE_PAGE_MESSAGES } from '../../../constants';
+import { API, ADMIN_MEMBER_MESSAGES, LECTURE_TRACK, MESSAGES, LECTURE_PAGE_MESSAGES } from '../../../constants';
 
 export default function MyAssignments() {
   const navigate = useNavigate();
@@ -14,6 +14,8 @@ export default function MyAssignments() {
   const [draftRemovedFileIds, setDraftRemovedFileIds] = useState([]);
   const [draftNewFiles, setDraftNewFiles] = useState([]);
   const [saving, setSaving] = useState(false);
+  const [lectureTitleById, setLectureTitleById] = useState({});
+  const [selectedAssignmentId, setSelectedAssignmentId] = useState(null);
 
   const loadAssignments = () => {
     setLoading(true);
@@ -29,6 +31,27 @@ export default function MyAssignments() {
   useEffect(() => {
     loadAssignments();
   }, []);
+
+  useEffect(() => {
+    const lectureIds = [...new Set(items.map((item) => item.lectureId).filter(Boolean))];
+    if (lectureIds.length === 0) {
+      setLectureTitleById({});
+      return;
+    }
+    Promise.all(
+      lectureIds.map((lectureId) =>
+        api.get(API.PATHS.LECTURE_DETAIL(lectureId))
+          .then((res) => [lectureId, res.data?.title || ''])
+          .catch(() => [lectureId, ''])
+      )
+    ).then((pairs) => {
+      const nextMap = {};
+      pairs.forEach(([lectureId, title]) => {
+        nextMap[lectureId] = title;
+      });
+      setLectureTitleById(nextMap);
+    });
+  }, [items]);
 
   const downloadFile = async (fileId, fileName) => {
     if (downloadingFileId != null) return;
@@ -108,6 +131,11 @@ export default function MyAssignments() {
     return byTrack;
   }, [items]);
 
+  const selectedAssignment = useMemo(
+    () => items.find((item) => item.assignmentId === selectedAssignmentId) ?? null,
+    [items, selectedAssignmentId]
+  );
+
   if (loading) {
     return (
       <div className="min-h-screen w-full bg-[#0a061e] text-white pt-24 pb-20 px-6 font-sans flex items-center justify-center">
@@ -145,7 +173,9 @@ export default function MyAssignments() {
                 <div className="space-y-3">
                   {weeks.map((week) => (
                     <div key={week} className="border border-white/10 rounded-xl overflow-hidden">
-                      <div className="px-4 py-2 bg-white/5 text-sm font-bold text-gray-200">{week}주차</div>
+                      <div className="px-4 py-2 bg-white/5 text-sm font-bold text-gray-200">
+                        {week}주차 | {lectureTitleById[grouped[track][week]?.[0]?.lectureId] || '-'}
+                      </div>
                       <div className="p-4 space-y-3">
                         {(grouped[track][week] || []).map((a) => (
                           <div key={a.assignmentId} className="bg-black/20 border border-white/10 rounded-xl p-4">
@@ -155,140 +185,21 @@ export default function MyAssignments() {
                                   제출일: {a.createdAt ? new Date(a.createdAt).toLocaleString() : '-'}
                                 </p>
                                 {a.githubUrl && (
-                                  <a
-                                    href={a.githubUrl}
-                                    target="_blank"
-                                    rel="noopener noreferrer"
-                                    className="text-cyan-400 hover:underline text-sm"
-                                  >
-                                    GitHub 링크
-                                  </a>
+                                  <p className="text-cyan-300 text-sm break-all">
+                                    {ADMIN_MEMBER_MESSAGES.GITHUB_LINK_LABEL}: {a.githubUrl}
+                                  </p>
                                 )}
                               </div>
-                              <div className="text-xs text-gray-400">상태: {a.status}</div>
-                            </div>
-
-                            <div className="mt-3 grid grid-cols-1 md:grid-cols-2 gap-3">
-                              <div className="bg-white/5 border border-white/10 rounded-xl p-3">
-                                <p className="text-xs text-gray-400 mb-1 flex items-center gap-1">
-                                  <FileText size={14} /> 제출 파일
-                                </p>
-                                {Array.isArray(a.files) && a.files.length > 0 ? (
-                                  a.files.map((f) => (
-                                    <div key={f.fileId} className="flex items-center justify-between gap-2">
-                                      <p className="text-sm text-gray-200">{f.fileName}</p>
-                                      <button
-                                        type="button"
-                                        onClick={() => downloadFile(f.fileId, f.fileName)}
-                                        disabled={downloadingFileId === f.fileId}
-                                        className="inline-flex items-center gap-1 text-xs text-cyan-300 hover:underline disabled:opacity-50"
-                                      >
-                                        <Download size={12} />
-                                        {MESSAGES.ASSIGNMENTS_DOWNLOAD ?? LECTURE_PAGE_MESSAGES.MATERIAL_DOWNLOAD}
-                                      </button>
-                                    </div>
-                                  ))
-                                ) : (
-                                  <p className="text-sm text-gray-500">-</p>
-                                )}
-                              </div>
-                              <div className="bg-white/5 border border-white/10 rounded-xl p-3">
-                                <p className="text-xs text-gray-400 mb-1 flex items-center gap-1">
-                                  <MessageCircle size={14} /> {LECTURE_PAGE_MESSAGES.ASSIGNMENT_FEEDBACK_TITLE}
-                                </p>
-                                {Array.isArray(a.feedbacks) && a.feedbacks.length > 0 ? (
-                                  <div className="space-y-2">
-                                    {a.feedbacks.map((fb) => (
-                                      <div key={fb.feedbackId} className="bg-black/20 border border-white/10 rounded-lg p-2">
-                                        <p className="text-sm text-gray-200 whitespace-pre-wrap">{fb.content}</p>
-                                        <p className="text-[10px] text-gray-500 mt-1">
-                                          {fb.createdAt ? new Date(fb.createdAt).toLocaleString() : ''}
-                                        </p>
-                                      </div>
-                                    ))}
-                                  </div>
-                                ) : (
-                                  <p className="text-sm text-gray-500">{LECTURE_PAGE_MESSAGES.ASSIGNMENT_FEEDBACK_EMPTY}</p>
-                                )}
-                              </div>
-                            </div>
-                            <div className="mt-3">
-                              {editingAssignmentId !== a.assignmentId ? (
-                                <button
-                                  type="button"
-                                  onClick={() => startEdit(a)}
-                                  className="px-3 py-1.5 rounded-lg bg-purple-600/20 text-purple-300 text-xs font-bold hover:bg-purple-600/30"
-                                >
-                                  {LECTURE_PAGE_MESSAGES.ASSIGNMENT_UPDATE}
-                                </button>
-                              ) : (
-                                <div className="bg-white/5 border border-white/10 rounded-xl p-3 space-y-3">
-                                  <div>
-                                    <label className="block text-xs text-gray-400 mb-1">{LECTURE_PAGE_MESSAGES.ASSIGNMENT_GITHUB_LABEL}</label>
-                                    <input
-                                      type="url"
-                                      value={draftGithubUrl}
-                                      onChange={(e) => setDraftGithubUrl(e.target.value)}
-                                      placeholder={LECTURE_PAGE_MESSAGES.ASSIGNMENT_GITHUB_PLACEHOLDER}
-                                      className="w-full bg-black/30 border border-white/10 rounded-lg px-3 py-2 text-sm text-white placeholder-gray-500 focus:outline-none focus:border-cyan-500"
-                                    />
-                                  </div>
-                                  <div>
-                                    <label className="block text-xs text-gray-400 mb-1">{LECTURE_PAGE_MESSAGES.ASSIGNMENT_NEW_FILES_LABEL}</label>
-                                    <input
-                                      type="file"
-                                      multiple
-                                      onChange={(e) => setDraftNewFiles(Array.from(e.target.files || []))}
-                                      className="block w-full text-xs text-gray-300"
-                                    />
-                                    {draftNewFiles.length > 0 && (
-                                      <p className="text-xs text-gray-400 mt-1">{draftNewFiles.map((f) => f.name).join(', ')}</p>
-                                    )}
-                                  </div>
-                                  <div>
-                                    <p className="text-xs text-gray-400 mb-1">{LECTURE_PAGE_MESSAGES.ASSIGNMENT_KEPT_FILES_LABEL}</p>
-                                    {Array.isArray(a.files) && a.files.length > 0 ? (
-                                      <div className="space-y-1">
-                                        {a.files.map((f) => {
-                                          const removed = draftRemovedFileIds.includes(f.fileId);
-                                          return (
-                                            <div key={f.fileId} className="flex items-center justify-between gap-2">
-                                              <span className={`text-xs ${removed ? 'text-gray-500 line-through' : 'text-gray-200'}`}>{f.fileName}</span>
-                                              <button
-                                                type="button"
-                                                onClick={() => toggleRemoveFile(f.fileId)}
-                                                className={`text-[11px] ${removed ? 'text-cyan-400' : 'text-red-300'} hover:underline`}
-                                              >
-                                                {removed ? LECTURE_PAGE_MESSAGES.ASSIGNMENT_UNDO_REMOVE : LECTURE_PAGE_MESSAGES.ASSIGNMENT_REMOVE_FILE}
-                                              </button>
-                                            </div>
-                                          );
-                                        })}
-                                      </div>
-                                    ) : (
-                                      <p className="text-xs text-gray-500">-</p>
-                                    )}
-                                  </div>
-                                  <div className="flex gap-2">
-                                    <button
-                                      type="button"
-                                      onClick={() => saveEdit(a)}
-                                      disabled={saving}
-                                      className="px-3 py-1.5 rounded-lg bg-cyan-600/20 text-cyan-300 text-xs font-bold hover:bg-cyan-600/30 disabled:opacity-50"
-                                    >
-                                      {saving ? LECTURE_PAGE_MESSAGES.ASSIGNMENT_SAVING : <span className="inline-flex items-center gap-1"><Check size={12} />{LECTURE_PAGE_MESSAGES.ASSIGNMENT_UPDATE}</span>}
-                                    </button>
-                                    <button
-                                      type="button"
-                                      onClick={cancelEdit}
-                                      disabled={saving}
-                                      className="px-3 py-1.5 rounded-lg border border-white/10 text-gray-300 text-xs hover:bg-white/10 disabled:opacity-50 inline-flex items-center gap-1"
-                                    >
-                                      <X size={12} /> {LECTURE_PAGE_MESSAGES.ASSIGNMENT_CANCEL}
-                                    </button>
-                                  </div>
-                                </div>
-                              )}
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  setSelectedAssignmentId(a.assignmentId);
+                                  cancelEdit();
+                                }}
+                                className="px-3 py-1.5 rounded-lg bg-white/10 text-gray-200 text-xs font-bold hover:bg-white/20"
+                              >
+                                {ADMIN_MEMBER_MESSAGES.DETAIL_VIEW}
+                              </button>
                             </div>
                           </div>
                         ))}
@@ -299,6 +210,165 @@ export default function MyAssignments() {
               </div>
             );
           })}
+        </div>
+      )}
+
+      {selectedAssignment && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/70"
+          onClick={() => {
+            setSelectedAssignmentId(null);
+            cancelEdit();
+          }}
+        >
+          <div
+            className="w-full max-w-3xl bg-[#161229] border border-white/10 rounded-2xl p-5 max-h-[90vh] overflow-y-auto"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="font-bold text-lg">
+                {selectedAssignment.week}주차 | {lectureTitleById[selectedAssignment.lectureId] || '-'}
+              </h3>
+              <button
+                type="button"
+                onClick={() => {
+                  setSelectedAssignmentId(null);
+                  cancelEdit();
+                }}
+                className="p-1 rounded-lg text-gray-400 hover:text-white hover:bg-white/10"
+              >
+                <X size={18} />
+              </button>
+            </div>
+
+            <div className="space-y-3">
+              <div className="bg-white/5 border border-white/10 rounded-xl p-3">
+                <p className="text-sm text-gray-300">
+                  제출일: {selectedAssignment.createdAt ? new Date(selectedAssignment.createdAt).toLocaleString() : '-'}
+                </p>
+                <p className="text-sm text-cyan-300 break-all mt-1">
+                  {ADMIN_MEMBER_MESSAGES.GITHUB_LINK_LABEL}: {selectedAssignment.githubUrl || '-'}
+                </p>
+              </div>
+              <div className="bg-white/5 border border-white/10 rounded-xl p-3">
+                <p className="text-xs text-gray-400 mb-2 flex items-center gap-1"><FileText size={14} /> 제출 파일</p>
+                {Array.isArray(selectedAssignment.files) && selectedAssignment.files.length > 0 ? (
+                  <div className="space-y-1">
+                    {selectedAssignment.files.map((f) => (
+                      <div key={f.fileId} className="flex items-center justify-between gap-2">
+                        <p className="text-sm text-gray-200">{f.fileName}</p>
+                        <button
+                          type="button"
+                          onClick={() => downloadFile(f.fileId, f.fileName)}
+                          disabled={downloadingFileId === f.fileId}
+                          className="inline-flex items-center gap-1 text-xs text-cyan-300 hover:underline disabled:opacity-50"
+                        >
+                          <Download size={12} />
+                          {MESSAGES.ASSIGNMENTS_DOWNLOAD ?? LECTURE_PAGE_MESSAGES.MATERIAL_DOWNLOAD}
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <p className="text-sm text-gray-500">-</p>
+                )}
+              </div>
+              <div className="bg-white/5 border border-white/10 rounded-xl p-3">
+                <p className="text-xs text-gray-400 mb-2 flex items-center gap-1"><MessageCircle size={14} /> {LECTURE_PAGE_MESSAGES.ASSIGNMENT_FEEDBACK_TITLE}</p>
+                {Array.isArray(selectedAssignment.feedbacks) && selectedAssignment.feedbacks.length > 0 ? (
+                  <div className="space-y-2">
+                    {selectedAssignment.feedbacks.map((fb) => (
+                      <div key={fb.feedbackId} className="bg-black/20 border border-white/10 rounded-lg p-2">
+                        <p className="text-sm text-gray-200 whitespace-pre-wrap">{fb.content}</p>
+                        <p className="text-[10px] text-gray-500 mt-1">
+                          {fb.createdAt ? new Date(fb.createdAt).toLocaleString() : ''}
+                        </p>
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <p className="text-sm text-gray-500">{LECTURE_PAGE_MESSAGES.ASSIGNMENT_FEEDBACK_EMPTY}</p>
+                )}
+              </div>
+
+              {editingAssignmentId !== selectedAssignment.assignmentId ? (
+                <button
+                  type="button"
+                  onClick={() => startEdit(selectedAssignment)}
+                  className="px-3 py-1.5 rounded-lg bg-purple-600/20 text-purple-300 text-xs font-bold hover:bg-purple-600/30"
+                >
+                  {LECTURE_PAGE_MESSAGES.ASSIGNMENT_UPDATE}
+                </button>
+              ) : (
+                <div className="bg-white/5 border border-white/10 rounded-xl p-3 space-y-3">
+                  <div>
+                    <label className="block text-xs text-gray-400 mb-1">{LECTURE_PAGE_MESSAGES.ASSIGNMENT_GITHUB_LABEL}</label>
+                    <input
+                      type="url"
+                      value={draftGithubUrl}
+                      onChange={(e) => setDraftGithubUrl(e.target.value)}
+                      placeholder={LECTURE_PAGE_MESSAGES.ASSIGNMENT_GITHUB_PLACEHOLDER}
+                      className="w-full bg-black/30 border border-white/10 rounded-lg px-3 py-2 text-sm text-white placeholder-gray-500 focus:outline-none focus:border-cyan-500"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-xs text-gray-400 mb-1">{LECTURE_PAGE_MESSAGES.ASSIGNMENT_NEW_FILES_LABEL}</label>
+                    <input
+                      type="file"
+                      multiple
+                      onChange={(e) => setDraftNewFiles(Array.from(e.target.files || []))}
+                      className="block w-full text-xs text-gray-300"
+                    />
+                    {draftNewFiles.length > 0 && (
+                      <p className="text-xs text-gray-400 mt-1">{draftNewFiles.map((f) => f.name).join(', ')}</p>
+                    )}
+                  </div>
+                  <div>
+                    <p className="text-xs text-gray-400 mb-1">{LECTURE_PAGE_MESSAGES.ASSIGNMENT_KEPT_FILES_LABEL}</p>
+                    {Array.isArray(selectedAssignment.files) && selectedAssignment.files.length > 0 ? (
+                      <div className="space-y-1">
+                        {selectedAssignment.files.map((f) => {
+                          const removed = draftRemovedFileIds.includes(f.fileId);
+                          return (
+                            <div key={f.fileId} className="flex items-center justify-between gap-2">
+                              <span className={`text-xs ${removed ? 'text-gray-500 line-through' : 'text-gray-200'}`}>{f.fileName}</span>
+                              <button
+                                type="button"
+                                onClick={() => toggleRemoveFile(f.fileId)}
+                                className={`text-[11px] ${removed ? 'text-cyan-400' : 'text-red-300'} hover:underline`}
+                              >
+                                {removed ? LECTURE_PAGE_MESSAGES.ASSIGNMENT_UNDO_REMOVE : LECTURE_PAGE_MESSAGES.ASSIGNMENT_REMOVE_FILE}
+                              </button>
+                            </div>
+                          );
+                        })}
+                      </div>
+                    ) : (
+                      <p className="text-xs text-gray-500">-</p>
+                    )}
+                  </div>
+                  <div className="flex gap-2">
+                    <button
+                      type="button"
+                      onClick={() => saveEdit(selectedAssignment)}
+                      disabled={saving}
+                      className="px-3 py-1.5 rounded-lg bg-cyan-600/20 text-cyan-300 text-xs font-bold hover:bg-cyan-600/30 disabled:opacity-50"
+                    >
+                      {saving ? LECTURE_PAGE_MESSAGES.ASSIGNMENT_SAVING : <span className="inline-flex items-center gap-1"><Check size={12} />{LECTURE_PAGE_MESSAGES.ASSIGNMENT_UPDATE}</span>}
+                    </button>
+                    <button
+                      type="button"
+                      onClick={cancelEdit}
+                      disabled={saving}
+                      className="px-3 py-1.5 rounded-lg border border-white/10 text-gray-300 text-xs hover:bg-white/10 disabled:opacity-50 inline-flex items-center gap-1"
+                    >
+                      <X size={12} /> {LECTURE_PAGE_MESSAGES.ASSIGNMENT_CANCEL}
+                    </button>
+                  </div>
+                </div>
+              )}
+            </div>
+          </div>
         </div>
       )}
     </div>

@@ -18,6 +18,7 @@ import Dashboard from './pages/Member/Dashboard';
 import AdminPage from './pages/Admin/index.jsx';
 import Apply from './pages/Public/Apply.jsx';
 import MyProfile from './pages/Member/MyProfile/index.jsx';
+import MyAssignments from './pages/Member/MyAssignments/index.jsx';
 import OAuthCallbackHandler from './components/OAuthCallbackHandler';
 
 const NavigationWrapper = ({ auth }) => {
@@ -104,6 +105,7 @@ function App() {
             <Route path="/dashboard" element={<Dashboard />} />
             <Route path="/lecture" element={<Lecture />} />
             <Route path="/lecture/:id" element={<LectureDetail userRole={userRole} />} />
+            <Route path="/assignments" element={<MyAssignments />} />
           </>
         )}
 

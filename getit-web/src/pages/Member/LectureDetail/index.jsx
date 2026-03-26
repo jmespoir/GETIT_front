@@ -64,10 +64,14 @@ const LectureDetail = () => {
   const [selectedFile, setSelectedFile] = useState(null);
   const [githubUrl, setGithubUrl] = useState('');
   const [uploadStatus, setUploadStatus] = useState('IDLE');
+  const [myAssignment, setMyAssignment] = useState(null);
+  const [myAssignmentLoading, setMyAssignmentLoading] = useState(false);
   const [qnaInput, setQnaInput] = useState('');
   const [qnaMessages, setQnaMessages] = useState([]);
   const [qnaSubmitting, setQnaSubmitting] = useState(false);
   const [qnaDeletingId, setQnaDeletingId] = useState(null);
+  const [lectureFiles, setLectureFiles] = useState([]);
+  const [lectureFilesLoading, setLectureFilesLoading] = useState(false);
 
   useEffect(() => {
     if (!id) {
@@ -89,7 +93,90 @@ const LectureDetail = () => {
       .catch(() => setQnaMessages([]));
   }, [lecture?.id, isMember]);
 
+  // 내 과제 제출(해당 강의) + 관리자 코멘트 이력 조회
+  useEffect(() => {
+    if (!lecture?.id || !isMember) {
+      setMyAssignment(null);
+      setMyAssignmentLoading(false);
+      return;
+    }
+    let cancelled = false;
+    setMyAssignment(null);
+    setMyAssignmentLoading(true);
+    api.get('/api/assignments/me')
+      .then((res) => {
+        if (cancelled) return;
+        const list = res.data?.data ?? res.data; // 서버 응답 포맷 방어
+        const arr = Array.isArray(list) ? list : [];
+        const found = arr.find((a) => a.lectureId === lecture.id) || null;
+        setMyAssignment(found);
+      })
+      .catch(() => {
+        if (!cancelled) setMyAssignment(null);
+      })
+      .finally(() => {
+        if (!cancelled) setMyAssignmentLoading(false);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [lecture?.id, isMember]);
+
+  useEffect(() => {
+    if (!lecture?.id) {
+      setLectureFiles([]);
+      setLectureFilesLoading(false);
+      return;
+    }
+    let cancelled = false;
+    setLectureFiles([]);
+    setLectureFilesLoading(true);
+    api
+      .get(API.PATHS.LECTURE_FILES(lecture.id))
+      .then((res) => {
+        if (cancelled) return;
+        setLectureFiles(Array.isArray(res.data) ? res.data : []);
+      })
+      .catch(() => {
+        if (!cancelled) setLectureFiles([]);
+      })
+      .finally(() => {
+        if (!cancelled) setLectureFilesLoading(false);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [lecture?.id]);
+
   const videoId = lecture?.videoUrl ? getYoutubeVideoId(lecture.videoUrl) : null;
+  const firstPdfAttachment = lectureFiles.find((f) => f.pdf) || null;
+
+  const downloadLectureFile = async (f) => {
+    try {
+      const res = await api.get(f.downloadUrl, { responseType: 'blob' });
+      const url = URL.createObjectURL(res.data);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = f.fileName || 'download';
+      a.click();
+      URL.revokeObjectURL(url);
+    } catch {
+      alert(LECTURE_PAGE_MESSAGES.MATERIAL_DOWNLOAD_ERROR);
+    }
+  };
+
+  const openAttachmentPdfInNewTab = async (f) => {
+    const path = f.viewUrl || f.downloadUrl;
+    try {
+      const res = await api.get(path, { responseType: 'blob' });
+      const url = URL.createObjectURL(res.data);
+      window.open(url, '_blank', 'noopener,noreferrer');
+      setTimeout(() => URL.revokeObjectURL(url), 120000);
+    } catch {
+      alert(LECTURE_PAGE_MESSAGES.MATERIAL_OPEN_TAB_ERROR);
+    }
+  };
+
 
   const handleFileSelect = (e) => {
     const file = e.target.files[0];
@@ -188,15 +275,7 @@ const LectureDetail = () => {
       <div className="max-w-7xl mx-auto grid grid-cols-1 lg:grid-cols-3 gap-8">
         <div className="lg:col-span-2 space-y-6">
           <div className="relative w-full aspect-video bg-black rounded-2xl overflow-hidden shadow-2xl border border-white/10 min-h-[360px]">
-            {!videoId && lecture.resourceUrl ? (
-              <div className="absolute inset-0 overflow-auto">
-                <PdfViewer
-                  file={lecture.resourceUrl}
-                  className="w-full min-h-full"
-                  downloadLabel={LECTURE_PAGE_MESSAGES.MATERIAL_VIEW_LINK}
-                />
-              </div>
-            ) : videoId ? (
+            {videoId ? (
               <>
                 <iframe
                   title="강의 영상"
@@ -213,6 +292,23 @@ const LectureDetail = () => {
                   </div>
                 )}
               </>
+            ) : firstPdfAttachment ? (
+              <div className="absolute inset-0 overflow-auto">
+                <PdfViewer
+                  file={firstPdfAttachment.viewUrl}
+                  authFetch
+                  className="w-full min-h-full"
+                  downloadLabel={LECTURE_PAGE_MESSAGES.MATERIAL_VIEW_NEW_TAB}
+                />
+              </div>
+            ) : !videoId && lecture.resourceUrl ? (
+              <div className="absolute inset-0 overflow-auto">
+                <PdfViewer
+                  file={lecture.resourceUrl}
+                  className="w-full min-h-full"
+                  downloadLabel={LECTURE_PAGE_MESSAGES.MATERIAL_VIEW_LINK}
+                />
+              </div>
             ) : (
               <div className="absolute inset-0 flex flex-col items-center justify-center p-6 text-center">
                 <AlertTriangle size={48} className="text-gray-500 mb-4" />
@@ -233,26 +329,69 @@ const LectureDetail = () => {
           </div>
         </div>
 
-        <div className="bg-[#110b29] border border-white/10 p-6 rounded-2xl">
-            <h3 className="font-bold mb-4 flex items-center gap-2 text-gray-200">
-              <Download size={18} className="text-cyan-400" /> 강의 자료
+        <div className="lg:col-span-1 space-y-6">
+          <div className="bg-[#110b29] border border-white/10 p-6 rounded-2xl space-y-6">
+            <h3 className="font-bold flex items-center gap-2 text-gray-200">
+              <Download size={18} className="text-cyan-400" /> {LECTURE_PAGE_MESSAGES.MATERIAL_SECTION_TITLE}
             </h3>
             {lecture.resourceUrl ? (
-              <a
-                href={lecture.resourceUrl}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="inline-flex items-center gap-2 text-cyan-400 hover:text-cyan-300 font-medium"
-              >
-                <Download size={16} />
-                {LECTURE_PAGE_MESSAGES.MATERIAL_VIEW_LINK}
-              </a>
-            ) : (
-              <p className="text-gray-500 text-sm">{LECTURE_PAGE_MESSAGES.MATERIAL_PREPARING}</p>
-            )}
-        </div>
-        
-        <div className="lg:col-span-1 space-y-6">
+              <div>
+                <p className="text-xs text-gray-500 mb-2">{LECTURE_PAGE_MESSAGES.MATERIAL_LINK_SECTION}</p>
+                <a
+                  href={lecture.resourceUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="inline-flex items-center gap-2 text-cyan-400 hover:text-cyan-300 font-medium text-sm break-all"
+                >
+                  <Download size={16} />
+                  {LECTURE_PAGE_MESSAGES.MATERIAL_VIEW_LINK}
+                </a>
+              </div>
+            ) : null}
+            <div>
+              <p className="text-xs text-gray-500 mb-2">{LECTURE_PAGE_MESSAGES.MATERIAL_ATTACHMENTS_SECTION}</p>
+              {lectureFilesLoading ? (
+                <p className="text-gray-500 text-sm">{LECTURE_PAGE_MESSAGES.MATERIAL_PDF_LOADING}</p>
+              ) : lectureFiles.length === 0 ? (
+                <p className="text-gray-500 text-sm">
+                  {!lecture.resourceUrl
+                    ? LECTURE_PAGE_MESSAGES.MATERIAL_PREPARING
+                    : LECTURE_PAGE_MESSAGES.MATERIAL_NO_ATTACHMENTS}
+                </p>
+              ) : (
+                <ul className="space-y-2">
+                  {lectureFiles.map((f) => (
+                    <li
+                      key={f.fileId}
+                      className="flex flex-wrap items-center gap-2 text-sm border border-white/10 rounded-lg p-2 bg-black/20"
+                    >
+                      <FileText size={16} className="text-cyan-400 shrink-0" />
+                      <span className="text-gray-200 truncate flex-1 min-w-0" title={f.fileName}>
+                        {f.fileName}
+                      </span>
+                      {f.pdf && (
+                        <button
+                          type="button"
+                          onClick={() => openAttachmentPdfInNewTab(f)}
+                          className="text-cyan-400 hover:text-cyan-300 shrink-0"
+                        >
+                          {LECTURE_PAGE_MESSAGES.MATERIAL_VIEW_NEW_TAB}
+                        </button>
+                      )}
+                      <button
+                        type="button"
+                        onClick={() => downloadLectureFile(f)}
+                        className="text-gray-300 hover:text-white shrink-0"
+                      >
+                        {LECTURE_PAGE_MESSAGES.MATERIAL_DOWNLOAD}
+                      </button>
+                    </li>
+                  ))}
+                </ul>
+              )}
+            </div>
+          </div>
+
           <div className="bg-[#110b29] border border-cyan-500/30 p-6 rounded-2xl shadow-lg relative overflow-hidden">
             <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-purple-500 to-cyan-500" />
             <h3 className="font-bold mb-4 flex items-center gap-2 text-gray-200">
@@ -304,6 +443,32 @@ const LectureDetail = () => {
                 {uploadStatus === 'IDLE' && '과제 제출하기'}
               </button>
             </div>
+          </div>
+
+          <div className="bg-[#110b29] border border-white/10 p-6 rounded-2xl">
+            <h3 className="font-bold mb-4 flex items-center gap-2 text-gray-200">
+              <MessageCircle size={18} className="text-cyan-400" /> {LECTURE_PAGE_MESSAGES.ASSIGNMENT_FEEDBACK_TITLE}
+            </h3>
+            {!isMember ? (
+              <p className="text-gray-500 text-sm">관리자 코멘트는 멤버만 확인할 수 있습니다.</p>
+            ) : myAssignmentLoading ? (
+              <p className="text-gray-500 text-sm">{LECTURE_PAGE_MESSAGES.ASSIGNMENT_FEEDBACK_LOADING}</p>
+            ) : !myAssignment ? (
+              <p className="text-gray-500 text-sm">{LECTURE_PAGE_MESSAGES.ASSIGNMENT_FEEDBACK_EMPTY}</p>
+            ) : Array.isArray(myAssignment.feedbacks) && myAssignment.feedbacks.length > 0 ? (
+              <div className="space-y-2">
+                {myAssignment.feedbacks.map((fb) => (
+                  <div key={fb.feedbackId} className="bg-black/20 border border-white/10 rounded-xl p-3">
+                    <p className="text-sm text-gray-200 whitespace-pre-wrap">{fb.content}</p>
+                    <p className="text-xs text-gray-500 mt-1">
+                      {fb.createdAt ? new Date(fb.createdAt).toLocaleString() : ''}
+                    </p>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <p className="text-gray-500 text-sm">{LECTURE_PAGE_MESSAGES.ASSIGNMENT_FEEDBACK_EMPTY}</p>
+            )}
           </div>
 
 

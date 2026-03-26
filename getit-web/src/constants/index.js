@@ -275,6 +275,7 @@ export const LECTURE_PAGE_MESSAGES = {
   ASSIGNMENT_REMOVE_FILE: '제거',
   ASSIGNMENT_SAVE_SUCCESS: '과제가 저장되었습니다.',
   ASSIGNMENT_SAVE_ERROR: '과제 저장에 실패했습니다.',
+  ASSIGNMENT_REFRESH_ERROR: '저장은 성공했지만 최신 제출 내역을 불러오지 못했습니다.',
   ASSIGNMENT_EMPTY_ERROR: '파일, 코멘트, GitHub 링크 중 하나는 입력해야 합니다.',
   ASSIGNMENT_FILE_REMOVE_HINT: '파일을 제거하면 저장 시 반영됩니다.',
   ASSIGNMENT_UNDO_REMOVE: '되돌리기',

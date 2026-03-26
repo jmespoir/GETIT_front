@@ -202,24 +202,27 @@ const LectureDetail = () => {
     const githubUrlTrimmed = (assignmentGithubUrl || '').trim() || null;
     const hasNewFiles = selectedFiles.length > 0;
     const hasGithub = !!githubUrlTrimmed;
-    const hasDelete = removedFileIds.length > 0;
+    const existingFilesCount = Array.isArray(myAssignment?.files) ? myAssignment.files.length : 0;
+    const removedCount = removedFileIds.length;
+    const remainingCount = Math.max(0, existingFilesCount - removedCount);
+    const finalFileCount = remainingCount + selectedFiles.length;
     if (!myAssignment && !hasNewFiles && !hasGithub) {
       alert(LECTURE_PAGE_MESSAGES.ASSIGNMENT_EMPTY_ERROR);
       return;
     }
-    if (myAssignment && !hasNewFiles && !hasGithub && !hasDelete) {
+    if (myAssignment && finalFileCount < 1 && !hasGithub) {
       alert(LECTURE_PAGE_MESSAGES.ASSIGNMENT_EMPTY_ERROR);
       return;
     }
     setUploadStatus('UPLOADING');
     const formData = new FormData();
+    let saveSucceeded = false;
     selectedFiles.forEach((file) => formData.append('files', file));
     const requestPayload = myAssignment
-      ? { comment: '', githubUrl: githubUrlTrimmed, deletedFiles: removedFileIds }
+      ? { githubUrl: githubUrlTrimmed, deletedFiles: removedFileIds }
       : {
         week: lecture.week,
         type: lecture.type,
-        comment: '',
         githubUrl: githubUrlTrimmed,
       };
     const requestBlob = new Blob([JSON.stringify(requestPayload)], { type: 'application/json' });
@@ -228,16 +231,25 @@ const LectureDetail = () => {
       ? api.patch(`/api/assignments/${myAssignment.assignmentId}`, formData)
       : api.post('/api/assignments', formData);
     requestPromise
+      .then(() => {
+        saveSucceeded = true;
+        setSelectedFiles([]);
+        setRemovedFileIds([]);
+        setUploadStatus('SUCCESS');
+      })
       .then(() => api.get('/api/assignments/me'))
       .then((res) => {
         const list = res.data?.data ?? res.data;
         const arr = Array.isArray(list) ? list : [];
         const found = arr.find((a) => a.lectureId === lecture.id) || null;
         setMyAssignment(found);
-        setUploadStatus('SUCCESS');
         alert(LECTURE_PAGE_MESSAGES.ASSIGNMENT_SAVE_SUCCESS);
       })
       .catch(() => {
+        if (saveSucceeded) {
+          alert(LECTURE_PAGE_MESSAGES.ASSIGNMENT_REFRESH_ERROR);
+          return;
+        }
         setUploadStatus('IDLE');
         alert(LECTURE_PAGE_MESSAGES.ASSIGNMENT_SAVE_ERROR);
       });

@@ -72,9 +72,11 @@ export default function MyAssignments() {
     if (saving) return;
     const githubUrl = (draftGithubUrl || '').trim() || null;
     const hasGithub = !!githubUrl;
-    const hasNewFiles = draftNewFiles.length > 0;
-    const hasDeletes = draftRemovedFileIds.length > 0;
-    if (!hasGithub && !hasNewFiles && !hasDeletes) {
+    const existingFilesCount = Array.isArray(assignment.files) ? assignment.files.length : 0;
+    const removedCount = draftRemovedFileIds.length;
+    const remainingCount = Math.max(0, existingFilesCount - removedCount);
+    const finalFileCount = remainingCount + draftNewFiles.length;
+    if (finalFileCount < 1 && !hasGithub) {
       alert(LECTURE_PAGE_MESSAGES.ASSIGNMENT_EMPTY_ERROR);
       return;
     }
@@ -82,7 +84,7 @@ export default function MyAssignments() {
     try {
       const formData = new FormData();
       draftNewFiles.forEach((f) => formData.append('files', f));
-      const request = { comment: '', githubUrl, deletedFiles: draftRemovedFileIds };
+      const request = { githubUrl, deletedFiles: draftRemovedFileIds };
       formData.append('request', new Blob([JSON.stringify(request)], { type: 'application/json' }), 'request.json');
       await api.patch(`/api/assignments/${assignment.assignmentId}`, formData);
       alert(LECTURE_PAGE_MESSAGES.ASSIGNMENT_SAVE_SUCCESS);

@@ -19,6 +19,9 @@ const NavDesktop = ({ auth, onLogout }) => {
   const publicLinksToShow = PUBLIC_LINKS.filter(
     (link) => link.to !== '/recruit' || !isMember || userRole === ROLES.ADMIN
   );
+  const memberLinksToShow = MEMBER_LINKS.filter(
+    (item) => !(userRole === ROLES.ADMIN && item.to === '/assignments')
+  );
 
   return (
     <div className="hidden md:flex items-center min-w-0 gap-1 md:gap-2 lg:gap-3 flex-shrink">
@@ -33,7 +36,7 @@ const NavDesktop = ({ auth, onLogout }) => {
           {(isMember || userRole === ROLES.ADMIN) && (
             <>
               {divider}
-              {MEMBER_LINKS.map((item) => {
+              {memberLinksToShow.map((item) => {
                 const { label, Icon } = item;
                 const key = item.to ?? item.href ?? label;
                 const linkClass = `${linkCommon} ${linkMember}`;

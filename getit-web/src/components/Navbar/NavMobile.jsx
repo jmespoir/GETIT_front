@@ -17,6 +17,9 @@ const NavMobile = ({ auth, onLogout, onClose }) => {
   const publicLinksToShow = PUBLIC_LINKS.filter(
     (link) => link.to !== '/recruit' || !isMember || userRole === ROLES.ADMIN
   );
+  const memberLinksToShow = MEMBER_LINKS.filter(
+    (item) => !(userRole === ROLES.ADMIN && item.to === '/assignments')
+  );
 
   return (
     <nav className="flex-shrink-0 flex flex-col justify-start pt-6 pb-4 px-4 overflow-y-auto">
@@ -40,7 +43,7 @@ const NavMobile = ({ auth, onLogout, onClose }) => {
           )}
           {(isMember || userRole === ROLES.ADMIN) && (
             <div className="flex flex-col gap-2">
-              {MEMBER_LINKS.map((item) => {
+              {memberLinksToShow.map((item) => {
                 const { label, Icon } = item;
                 const key = item.to ?? item.href ?? label;
                 const linkClass = `${linkBase} ${linkMember}`;

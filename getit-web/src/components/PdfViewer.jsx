@@ -91,7 +91,7 @@ export default function PdfViewer({
         window.open(u, '_blank', 'noopener,noreferrer');
         setTimeout(() => URL.revokeObjectURL(u), 120000);
       } catch {
-        setLoadError(true);
+        alert(LECTURE_PAGE_MESSAGES.MATERIAL_OPEN_TAB_ERROR);
       }
       return;
     }

@@ -315,6 +315,8 @@ export const MY_QNA_PAGE = {
   FILTER_ANSWERED: '답변 있음',
   THREAD_TOGGLE_EXPAND: '대화 펼치기',
   THREAD_TOGGLE_COLLAPSE: '대화 접기',
+  EXPAND_BUTTON_SHORT: '펼치기',
+  COLLAPSE_BUTTON_SHORT: '접기',
   ROLE_YOU: '나',
   ROLE_ADMIN: '관리자',
 };

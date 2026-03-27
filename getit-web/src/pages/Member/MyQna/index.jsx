@@ -113,9 +113,9 @@ export default function MyQna() {
   };
 
   const filterOptions = [
-    { id: FILTER.ALL, label: MY_QNA_PAGE.FILTER_ALL },
-    { id: FILTER.UNANSWERED, label: MY_QNA_PAGE.FILTER_UNANSWERED },
-    { id: FILTER.ANSWERED, label: MY_QNA_PAGE.FILTER_ANSWERED },
+    { id: FILTER.ALL, label: MY_QNA_PAGE.FILTER_ALL, activeClass: 'bg-cyan-600/25 border-cyan-400/60 text-cyan-100 shadow-[0_0_12px_rgba(34,211,238,0.2)]' },
+    { id: FILTER.UNANSWERED, label: MY_QNA_PAGE.FILTER_UNANSWERED, activeClass: 'bg-amber-500/20 border-amber-400/60 text-amber-100 shadow-[0_0_12px_rgba(251,191,36,0.15)]' },
+    { id: FILTER.ANSWERED, label: MY_QNA_PAGE.FILTER_ANSWERED, activeClass: 'bg-emerald-600/25 border-emerald-400/55 text-emerald-100 shadow-[0_0_12px_rgba(52,211,153,0.15)]' },
   ];
 
   if (loading) {
@@ -164,9 +164,9 @@ export default function MyQna() {
                   setFilter(opt.id);
                   setExpandedKey(null);
                 }}
-                className={`px-3 py-1.5 rounded-xl text-sm font-bold border transition-colors ${
+                className={`px-3 py-1.5 rounded-xl text-sm font-bold border-2 transition-all ${
                   filter === opt.id
-                    ? 'bg-cyan-600/20 border-cyan-500/40 text-cyan-300'
+                    ? opt.activeClass
                     : 'bg-white/5 border-white/10 text-gray-300 hover:bg-white/10'
                 }`}
               >
@@ -189,32 +189,47 @@ export default function MyQna() {
                     key={row.rowKey}
                     className="bg-[#110b29] border border-white/10 rounded-2xl p-4"
                   >
-                    <div className="flex gap-2 items-start">
+                    <div className="flex gap-3 items-start">
                       <div className="min-w-0 flex-1">
                         <div className="flex flex-wrap items-center justify-between gap-2 mb-2">
                           <span className="text-sm font-bold text-cyan-300 truncate">{row.lectureTitle || '-'}</span>
-                          <span className="text-xs text-gray-500 shrink-0">{trackLabel(row.trackType)}</span>
-                        </div>
-                        <p className="text-sm text-gray-200 line-clamp-3 whitespace-pre-wrap">{row.preview}</p>
-                        <div className="mt-3 flex flex-wrap items-center justify-between gap-2 text-xs">
-                          <span className="text-gray-500">
-                            {MY_QNA_PAGE.LAST_ACTIVITY}
-                            {': '}
-                            {row.lastAt ? new Date(row.lastAt).toLocaleString() : '-'}
+                          <span className="text-[11px] uppercase tracking-wide text-gray-500 shrink-0 px-2 py-0.5 rounded-md bg-white/5 border border-white/10">
+                            {trackLabel(row.trackType)}
                           </span>
-                          <span className={row.unanswered ? 'text-amber-400 font-bold' : 'text-gray-500'}>
+                        </div>
+                        <div className="mb-2">
+                          <span
+                            className={`inline-flex items-center px-2.5 py-1 rounded-full text-xs font-extrabold border-2 ${
+                              row.unanswered
+                                ? 'bg-amber-500/20 border-amber-400/70 text-amber-100 ring-1 ring-amber-400/30'
+                                : 'bg-emerald-500/20 border-emerald-400/65 text-emerald-100 ring-1 ring-emerald-400/25'
+                            }`}
+                          >
                             {row.unanswered ? MY_QNA_PAGE.UNANSWERED : MY_QNA_PAGE.ANSWERED}
                           </span>
+                        </div>
+                        <p className="text-sm text-gray-200 line-clamp-3 whitespace-pre-wrap">{row.preview}</p>
+                        <div className="mt-3 text-xs text-gray-500">
+                          {MY_QNA_PAGE.LAST_ACTIVITY}
+                          {': '}
+                          {row.lastAt ? new Date(row.lastAt).toLocaleString() : '-'}
                         </div>
                       </div>
                       <button
                         type="button"
                         onClick={() => toggleExpand(row.rowKey)}
-                        className="shrink-0 p-2 rounded-lg text-gray-400 hover:text-white hover:bg-white/10"
+                        className={`shrink-0 flex flex-col sm:flex-row items-center justify-center gap-1 sm:gap-1.5 px-3 py-2.5 sm:px-3.5 rounded-xl border-2 font-bold text-xs sm:text-sm transition-all shadow-lg min-w-[4.5rem] sm:min-w-0 ${
+                          isOpen
+                            ? 'border-violet-400/80 bg-violet-600/30 text-violet-50 ring-2 ring-violet-400/35 hover:bg-violet-600/40'
+                            : 'border-cyan-400/80 bg-gradient-to-b from-cyan-500/35 to-cyan-700/30 text-cyan-50 ring-2 ring-cyan-400/40 hover:from-cyan-500/45 hover:to-cyan-700/40 hover:brightness-110 active:scale-[0.98]'
+                        }`}
                         aria-expanded={isOpen}
                         aria-label={isOpen ? MY_QNA_PAGE.THREAD_TOGGLE_COLLAPSE : MY_QNA_PAGE.THREAD_TOGGLE_EXPAND}
                       >
-                        <ChevronDown size={20} className={`transition-transform ${isOpen ? 'rotate-180' : ''}`} />
+                        <ChevronDown size={22} className={`shrink-0 transition-transform ${isOpen ? 'rotate-180' : ''}`} />
+                        <span className="leading-tight text-center">
+                          {isOpen ? MY_QNA_PAGE.COLLAPSE_BUTTON_SHORT : MY_QNA_PAGE.EXPAND_BUTTON_SHORT}
+                        </span>
                       </button>
                     </div>
 
@@ -242,7 +257,9 @@ export default function MyQna() {
                             ))}
                           </div>
                         ) : (
-                          <p className="text-xs text-gray-500">{MY_QNA_PAGE.UNANSWERED}</p>
+                          <span className="inline-flex items-center px-2 py-1 rounded-lg text-xs font-bold bg-amber-500/15 border border-amber-400/50 text-amber-100">
+                            {MY_QNA_PAGE.UNANSWERED}
+                          </span>
                         )}
                       </div>
                     )}

@@ -289,9 +289,10 @@ export const LECTURE_PAGE_MESSAGES = {
   ASSIGNMENT_EDIT_MODE: '이미 제출한 과제가 있어 수정 모드로 전환됩니다.',
   ASSIGNMENT_NEW_FILES_LABEL: '추가 파일',
   ASSIGNMENT_FILES_CUMULATIVE_HINT:
-    '파일 선택을 여러 번 하면 목록에 이어 붙습니다. 이름·크기·수정 시각이 같은 파일은 중복으로 넣지 않습니다.',
+    '드래그·드롭이나 파일 선택을 여러 번 하면 목록에 이어 붙습니다. 이름·크기·수정 시각이 같은 파일은 중복으로 넣지 않습니다.',
   ASSIGNMENT_DROP_OR_CLICK: '파일을 드래그하거나 클릭',
-  ASSIGNMENT_ADD_MORE_FILES_PROMPT: '클릭하여 파일 더 추가',
+  ASSIGNMENT_ADD_MORE_FILES_PROMPT: '드래그하거나 클릭하여 파일 더 추가',
+  ASSIGNMENT_FILE_DROP_ZONE_ARIA: '파일을 드래그하여 놓거나 클릭하여 선택',
   ASSIGNMENT_CLEAR_SELECTED_FILES: '선택한 파일 모두 지우기',
   ASSIGNMENT_REMOVE_SELECTED_FILE: '선택 목록에서 제거',
   ASSIGNMENT_KEPT_FILES_LABEL: '현재 제출 파일',

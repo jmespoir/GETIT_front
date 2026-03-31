@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useParams, useNavigate, useLocation } from 'react-router-dom';
 import {
   ArrowLeft, PlayCircle, AlertTriangle, FileText,
@@ -45,6 +45,9 @@ const LectureDetail = () => {
   const [qnaDeletingId, setQnaDeletingId] = useState(null);
   const [lectureFiles, setLectureFiles] = useState([]);
   const [lectureFilesLoading, setLectureFilesLoading] = useState(false);
+  const [assignmentFileDragActive, setAssignmentFileDragActive] = useState(false);
+  const assignmentFileInputRef = useRef(null);
+  const skipAssignmentFileClickAfterDropRef = useRef(false);
 
   useEffect(() => {
     if (!id) {
@@ -165,12 +168,50 @@ const LectureDetail = () => {
   }, [myAssignment?.assignmentId, myAssignment?.githubUrl]);
 
 
-  const handleFileSelect = (e) => {
-    const incoming = Array.from(e.target.files || []);
-    if (incoming.length === 0) return;
+  const appendAssignmentFiles = (incoming) => {
+    if (!incoming.length) return;
     setSelectedFiles((prev) => mergeAssignmentFiles(prev, incoming));
     setUploadStatus('IDLE');
+  };
+
+  const handleFileSelect = (e) => {
+    appendAssignmentFiles(Array.from(e.target.files || []));
     e.target.value = '';
+  };
+
+  const handleAssignmentDropZoneClick = () => {
+    if (skipAssignmentFileClickAfterDropRef.current) return;
+    assignmentFileInputRef.current?.click();
+  };
+
+  const handleAssignmentDropZoneDragOver = (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+  };
+
+  const handleAssignmentDropZoneDragEnter = (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setAssignmentFileDragActive(true);
+  };
+
+  const handleAssignmentDropZoneDragLeave = (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    if (!e.currentTarget.contains(e.relatedTarget)) {
+      setAssignmentFileDragActive(false);
+    }
+  };
+
+  const handleAssignmentDropZoneDrop = (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setAssignmentFileDragActive(false);
+    skipAssignmentFileClickAfterDropRef.current = true;
+    window.setTimeout(() => {
+      skipAssignmentFileClickAfterDropRef.current = false;
+    }, 400);
+    appendAssignmentFiles(Array.from(e.dataTransfer?.files || []));
   };
 
   const handleToggleRemoveExistingFile = (fileId) => {
@@ -424,13 +465,35 @@ const LectureDetail = () => {
             </h3>
             <div className="space-y-4">
               <div className="space-y-2">
-                <div className="relative border-2 border-dashed border-white/10 rounded-xl p-6 text-center hover:bg-white/5 transition-colors group min-h-[100px] flex items-center justify-center">
-                  <input
-                    type="file"
-                    multiple
-                    onChange={handleFileSelect}
-                    className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10"
-                  />
+                <input
+                  ref={assignmentFileInputRef}
+                  type="file"
+                  multiple
+                  onChange={handleFileSelect}
+                  className="sr-only"
+                  tabIndex={-1}
+                />
+                <div
+                  role="button"
+                  tabIndex={0}
+                  aria-label={LECTURE_PAGE_MESSAGES.ASSIGNMENT_FILE_DROP_ZONE_ARIA}
+                  onClick={handleAssignmentDropZoneClick}
+                  onKeyDown={(ev) => {
+                    if (ev.key === 'Enter' || ev.key === ' ') {
+                      ev.preventDefault();
+                      handleAssignmentDropZoneClick();
+                    }
+                  }}
+                  onDragOver={handleAssignmentDropZoneDragOver}
+                  onDragEnter={handleAssignmentDropZoneDragEnter}
+                  onDragLeave={handleAssignmentDropZoneDragLeave}
+                  onDrop={handleAssignmentDropZoneDrop}
+                  className={`relative border-2 border-dashed rounded-xl p-6 text-center transition-colors group min-h-[100px] flex items-center justify-center cursor-pointer outline-none focus-visible:ring-2 focus-visible:ring-cyan-500/50 ${
+                    assignmentFileDragActive
+                      ? 'border-cyan-400/70 bg-cyan-500/15'
+                      : 'border-white/10 hover:bg-white/5'
+                  }`}
+                >
                   <div className="flex flex-col items-center gap-2 text-gray-400 group-hover:text-gray-200 pointer-events-none">
                     <Upload size={24} />
                     <span className="text-sm">

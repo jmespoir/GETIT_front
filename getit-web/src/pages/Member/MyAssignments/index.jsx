@@ -1,6 +1,6 @@
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { ArrowLeft, FileText, MessageCircle, Download, Check, X } from 'lucide-react';
+import { ArrowLeft, FileText, MessageCircle, Download, Check, X, Upload } from 'lucide-react';
 import api from '../../../api/axios';
 import { API, ADMIN_MEMBER_MESSAGES, LECTURE_TRACK, MESSAGES, LECTURE_PAGE_MESSAGES } from '../../../constants';
 import { mergeAssignmentFiles } from '../../../utils/mergeAssignmentFiles';
@@ -17,6 +17,9 @@ export default function MyAssignments() {
   const [saving, setSaving] = useState(false);
   const [lectureTitleById, setLectureTitleById] = useState({});
   const [selectedAssignmentId, setSelectedAssignmentId] = useState(null);
+  const [draftFileDragActive, setDraftFileDragActive] = useState(false);
+  const draftFileInputRef = useRef(null);
+  const skipDraftFileClickAfterDropRef = useRef(false);
 
   const loadAssignments = () => {
     setLoading(true);
@@ -92,11 +95,49 @@ export default function MyAssignments() {
     ));
   };
 
-  const handleDraftFilesChange = (e) => {
-    const incoming = Array.from(e.target.files || []);
-    if (incoming.length === 0) return;
+  const appendDraftNewFiles = (incoming) => {
+    if (!incoming.length) return;
     setDraftNewFiles((prev) => mergeAssignmentFiles(prev, incoming));
+  };
+
+  const handleDraftFilesChange = (e) => {
+    appendDraftNewFiles(Array.from(e.target.files || []));
     e.target.value = '';
+  };
+
+  const handleDraftDropZoneClick = () => {
+    if (skipDraftFileClickAfterDropRef.current) return;
+    draftFileInputRef.current?.click();
+  };
+
+  const handleDraftDropZoneDragOver = (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+  };
+
+  const handleDraftDropZoneDragEnter = (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setDraftFileDragActive(true);
+  };
+
+  const handleDraftDropZoneDragLeave = (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    if (!e.currentTarget.contains(e.relatedTarget)) {
+      setDraftFileDragActive(false);
+    }
+  };
+
+  const handleDraftDropZoneDrop = (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setDraftFileDragActive(false);
+    skipDraftFileClickAfterDropRef.current = true;
+    window.setTimeout(() => {
+      skipDraftFileClickAfterDropRef.current = false;
+    }, 400);
+    appendDraftNewFiles(Array.from(e.dataTransfer?.files || []));
   };
 
   const saveEdit = async (assignment) => {
@@ -320,13 +361,48 @@ export default function MyAssignments() {
                     />
                   </div>
                   <div>
-                    <label className="block text-xs text-gray-400 mb-1">{LECTURE_PAGE_MESSAGES.ASSIGNMENT_NEW_FILES_LABEL}</label>
+                    <label htmlFor="my-assignments-draft-file-input" className="block text-xs text-gray-400 mb-1">
+                      {LECTURE_PAGE_MESSAGES.ASSIGNMENT_NEW_FILES_LABEL}
+                    </label>
                     <input
+                      id="my-assignments-draft-file-input"
+                      ref={draftFileInputRef}
                       type="file"
                       multiple
                       onChange={handleDraftFilesChange}
-                      className="block w-full text-xs text-gray-300"
+                      className="sr-only"
+                      tabIndex={-1}
                     />
+                    <div
+                      role="button"
+                      tabIndex={0}
+                      aria-label={LECTURE_PAGE_MESSAGES.ASSIGNMENT_FILE_DROP_ZONE_ARIA}
+                      onClick={handleDraftDropZoneClick}
+                      onKeyDown={(ev) => {
+                        if (ev.key === 'Enter' || ev.key === ' ') {
+                          ev.preventDefault();
+                          handleDraftDropZoneClick();
+                        }
+                      }}
+                      onDragOver={handleDraftDropZoneDragOver}
+                      onDragEnter={handleDraftDropZoneDragEnter}
+                      onDragLeave={handleDraftDropZoneDragLeave}
+                      onDrop={handleDraftDropZoneDrop}
+                      className={`mt-1 border-2 border-dashed rounded-xl p-4 text-center transition-colors min-h-[88px] flex items-center justify-center cursor-pointer outline-none focus-visible:ring-2 focus-visible:ring-cyan-500/50 ${
+                        draftFileDragActive
+                          ? 'border-cyan-400/70 bg-cyan-500/15'
+                          : 'border-white/10 hover:bg-white/5'
+                      }`}
+                    >
+                      <div className="flex flex-col items-center gap-1.5 text-gray-400 pointer-events-none">
+                        <Upload size={20} />
+                        <span className="text-xs">
+                          {draftNewFiles.length === 0
+                            ? LECTURE_PAGE_MESSAGES.ASSIGNMENT_DROP_OR_CLICK
+                            : LECTURE_PAGE_MESSAGES.ASSIGNMENT_ADD_MORE_FILES_PROMPT}
+                        </span>
+                      </div>
+                    </div>
                     {draftNewFiles.length > 0 && (
                       <ul className="mt-2 max-h-28 overflow-y-auto space-y-1 border border-white/10 rounded-lg p-2 bg-black/20">
                         {draftNewFiles.map((f, idx) => (
